@@ -1,0 +1,30 @@
+/* src/components/Navbar.css */
+ .navbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #343a40;
+    color: #fff;
+    padding: 15px 20px;
+    z-index: 1000;
+  }
+  
+  .navbar .btn-info {
+    background-color: #6c757d;
+    border: none;
+    color: white;
+  }
+  
+  .navbar-title {
+    margin-left: 20px;
+    font-size: 1.5em;
+    font-weight: 600;
+    display: inline-block;
+  }
+  
+  .TextColor {
+    color: inherit !important; /* Prevent text color change */
+  background-color: transparent !important; /* Prevent background color change */
+  }
+ 

@@ -1,0 +1,136 @@
+/* src/components/Sidebar.css */
+
+/* Global body and font settings */
+@import "https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700";
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #fafafa;
+  margin: 0;
+  padding: 0;
+}
+
+/* Sidebar */
+#sidebar {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  width: 250px;
+  background: #343a40; /* Sidebar background color */
+  color: #fff;
+  height: calc(200vh - 60px); /* Sidebar height excluding navbar */
+  transform: translateX(-250px); /* Initially hidden */
+  transition: transform 0.3s ease-in-out;
+  text-decoration: none;
+  overflow-y: auto;
+}
+
+#sidebar.active {
+  transform: translateX(0); /* Show the sidebar when active */
+}
+
+#sidebar .sidebar-header {
+  padding: 20px;
+  background: #495057; /* Slightly lighter gray for the header */
+}
+
+#sidebar ul.components {
+  padding: 20px 0;
+  border-bottom: 1px solid #6c757d;
+}
+
+#sidebar ul p {
+  color: #fff;
+  padding: 10px;
+  font-weight: 400;
+  font-size: 1.2em;
+  margin: 0;
+}
+
+#sidebar ul li a {
+  padding: 10px;
+  font-size: 1.1em;
+  display: block;
+  color: #fff; /* Default text color */
+  transition: background-color 0.3s ease, color 0.3s ease;
+  border-radius: 3px;
+  text-decoration: none;
+}
+
+#sidebar ul li a:hover {
+  color: #343a40; /* Text color on hover */
+  background: #fff; /* Background color on hover */
+}
+
+#sidebar ul li.active>a {
+  color: #fff;
+  background: #495057; /* Active link background color */
+}
+
+/* Dropdown Styling */
+ul ul a {
+  font-size: 0.9em;
+  padding-left: 30px;
+  background: #495057;
+}
+
+ul ul {
+  display: none; /* Hide submenus by default */
+}
+
+ul.show {
+  display: block; /* Show submenu when active */
+}
+
+
+li.active .dropdown-toggle::after {
+  transform: rotate(-180deg);
+}
+
+/* Sidebar CTA buttons */
+ul.CTAs {
+  padding: 20px;
+}
+
+ul.CTAs a {
+  text-align: center;
+  font-size: 0.9em;
+  display: block;
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
+
+/* Adjust Content width */
+/* #content {
+  transition: margin-left 0.3s ease-in-out;
+  padding: 20px;
+  min-height: 100vh;
+  margin-top: 50px;
+} */
+
+/* When sidebar is open, content will have space for sidebar */
+.content-with-sidebar {
+  margin-left: 250px;
+}
+
+/* When sidebar is closed, content will take full width */
+.content-full-width {
+  width: 100%;
+}
+
+.small-font{
+  font-size: 0.9em;
+}
+
+/* Small screen responsiveness */
+@media (max-width: 768px) {
+  #sidebar {
+    margin-left: -250px;
+  }
+  #sidebar.active {
+    margin-left: 0;
+  }
+  #sidebarCollapse span {
+    display: none;
+  }
+}

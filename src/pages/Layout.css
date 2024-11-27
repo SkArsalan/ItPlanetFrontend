@@ -1,0 +1,31 @@
+/* src/App.css */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; 
+  }
+  
+  .main-container {
+    display: flex;
+    flex: 1;
+    transition: margin-left 0.3s ease;
+  }
+  
+  .sidebar-open #content {
+    margin-left: 250px;
+  }
+  
+
+  #content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    margin-top: 50px;
+  }
+  

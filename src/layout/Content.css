@@ -1,0 +1,36 @@
+/* src/components/Content.css */
+.main-content {
+    padding: 20px;
+    margin-left: 250px; 
+    transition: margin-left 0.3s ease;
+    background-color: #f9f9f9;
+    flex: 1;
+    
+  }
+  
+  .main-content h1 {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .main-content p {
+    font-size: 1.2em;
+    color: #555;
+    line-height: 1.6;
+  }
+  #content {
+    position: relative;
+    transition: margin-left 0.3s ease-in-out;
+    padding: 20px;
+    min-height: 100vh;
+   margin-top: 60px;
+   overflow: visible;
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      margin-left: 0;
+    }
+  }
+  
