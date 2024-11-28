@@ -1,11 +1,16 @@
 // src/components/AddProduct.js
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../../hooks/context/AuthContext"; // Assuming you're using a context for authentication
 import API from "../../api/axios"; // Assuming API is an axios instance configured for your backend
+import { useLocation, useNavigate } from "react-router-dom";
 
 const AddProduct = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const productToEdit = location.state?.product || null;
   const initialData = {
     product_name: "",
     description: "",
@@ -19,6 +24,12 @@ const AddProduct = () => {
   const [formData, setFormData] = useState(initialData);
   const { isAuthenticated } = useAuth();  // Check if user is authenticated and get token if needed
 
+  useEffect(() => {
+    if (productToEdit){
+      setFormData(productToEdit); // Populate form data if editing
+    }
+  }, [productToEdit])
+
   function handleChange(e) {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -31,16 +42,18 @@ const AddProduct = () => {
       alert("User is not authenticated. Please log in first.");
       return;
     }
-
-   
-
     console.log("Submitting data", formData);
 
-    try {
-      const response = await API.post("/add", formData);
+    const endpoint = productToEdit ? `/update/${productToEdit.id}` //Update endpoint if editing
+     : "/add"; //Add endpoint if creating
 
-      alert(response.data.message || "Product added successfully");
-      setFormData(initialData); // Reset form
+     const method = productToEdit ? "put" : "post"
+
+    try {
+      const response = await API[method](endpoint, formData);
+
+      alert(response.data.message || "Product saved successfully");
+      productToEdit ? navigate("/product-list") : setFormData(initialData); // Reset form
     } catch (error) {
       console.error("Error adding product:", error);
       const errorMessage = error.response?.data?.message || "An error occurred while adding the product";
@@ -49,7 +62,7 @@ const AddProduct = () => {
   }
 
   function handleCancel() {
-    setFormData(initialData);
+    productToEdit ? navigate("/product-list") : setFormData(initialData);
   }
 
   return (
@@ -58,8 +71,8 @@ const AddProduct = () => {
         {/* Page Header */}
         <div className="page-header">
           <div className="page-title">
-            <h4>Add Product</h4>
-            <h6>Create new product</h6>
+            <h4>{productToEdit ? "Edit Product" : "Add Product"}</h4>
+            <h6>{productToEdit ? "Update product details" : "Create new product"}</h6>
           </div>
         </div>
 
@@ -181,7 +194,7 @@ const AddProduct = () => {
                 {/* Buttons */}
                 <div className="col-lg-12 d-flex justify-content-start mt-3">
                   <button type="submit" className="btn btn-primary me-2 text-white">
-                    Submit
+                    {productToEdit ? "Update" : "Submit"}
                   </button>
                   <button
                     type="button"

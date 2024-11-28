@@ -1,8 +1,10 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { useLocation } from "react-router-dom";
 
 const InvoiceGenerator = () => {
+  const location = useLocation()
   const [invoice, setInvoice] = useState({
     clientName: "",
     invoiceDate: "",
@@ -14,20 +16,51 @@ const InvoiceGenerator = () => {
     routingNumber: "120000547",
   });
 
-  const [item, setItem] = useState({ description: "", qty: 0, price: 0, subtotal: 0 });
+  const initialItem ={ item_name: "",description: "", qty: 1, price: 0, subtotal: 0 }
+
+  const [item, setItem] = useState(initialItem);
   const [editIndex, setEditIndex] = useState(null);
   const invoiceRef = useRef(null);
 
+  useEffect(() => {
+    // Only run this effect if location.state.receiptData exists and item isn't already in invoice
+    if (location.state && location.state.receiptData) {
+      const receiptItem = location.state.receiptData;
+      const newItem = {
+        item_name: receiptItem.name,
+        description: receiptItem.description,
+        qty: receiptItem.quantity,
+        price: receiptItem.price,
+        subtotal: receiptItem.quantity * receiptItem.price,
+      };
+
+      // Check if the item already exists in the invoice to avoid duplicates
+      setInvoice((prev) => {
+        const itemExists = prev.items.some(item => item.item_name === newItem.item_name);
+
+        if (itemExists) {
+          return prev; // Do nothing if the item already exists
+        }
+
+        return {
+          ...prev,
+          items: [...prev.items, newItem],
+          total: prev.total + newItem.subtotal,
+        };
+      });
+    }
+  }, [location.state]); 
+
   // Add or Update Item
   const saveItem = () => {
-    if (item.description && item.qty > 0 && item.price > 0) {
+    if (item.item_name && item.description && item.qty > 0 && item.price > 0) {
       const newItem = { ...item, subtotal: item.qty * item.price };
-
+  
       if (editIndex !== null) {
         const updatedItems = [...invoice.items];
         const oldSubtotal = updatedItems[editIndex].subtotal;
         updatedItems[editIndex] = newItem;
-
+  
         setInvoice((prev) => ({
           ...prev,
           items: updatedItems,
@@ -41,8 +74,9 @@ const InvoiceGenerator = () => {
           total: prev.total + newItem.subtotal,
         }));
       }
-
-      setItem({ description: "", qty: 0, price: 0, subtotal: 0 });
+  
+      // Reset the item form to initial state
+      setItem(initialItem);
     }
   };
 
@@ -151,6 +185,16 @@ const InvoiceGenerator = () => {
       {/* Add Items Section */}
       <h2>Add Items</h2>
       <div className="mb-3">
+        <label className="form-label">Item Name</label>
+        <input
+          type="text"
+          className="form-control"
+          name="item_name"
+          value={item.item_name}
+          onChange={handleItemChange}
+        />
+      </div>
+      <div className="mb-3">
         <label className="form-label">Description</label>
         <input
           type="text"
@@ -199,36 +243,41 @@ const InvoiceGenerator = () => {
         <table className="table">
           <thead>
             <tr>
-              <th>Description</th>
+              <th>Item Name with Description</th>
               <th>Quantity</th>
               <th>Price</th>
               <th>Subtotal</th>
             </tr>
           </thead>
           <tbody>
-            {invoice.items.map((item, index) => (
-              <tr key={index}>
-                <td>{item.description}</td>
-                <td>{item.qty}</td>
-                <td>{item.price}</td>
-                <td>{item.subtotal}</td>
-                <td>
-                  <button
-                    onClick={() => editItem(index)}
-                    className="btn btn-sm btn-warning no-print"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => deleteItem(index)}
-                    className="btn btn-sm btn-danger ms-2 no-print"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+  {invoice.items.map((item, index) => (
+    <tr key={index}>
+      <td>
+        {item.item_name}{" "}
+        <span style={{ fontSize: "0.85em", color: "#666" }}>
+          ({item.description})
+        </span>
+      </td>
+      <td>{item.qty}</td>
+      <td>{item.price}</td>
+      <td>{item.subtotal}</td>
+      <td>
+        <button
+          onClick={() => editItem(index)}
+          className="btn btn-sm btn-warning no-print"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => deleteItem(index)}
+          className="btn btn-sm btn-danger ms-2 no-print"
+        >
+          Delete
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
         </table>
         <h4>Total: ${invoice.total}</h4>
         <p><strong>Account:</strong> {invoice.accountNumber}</p>

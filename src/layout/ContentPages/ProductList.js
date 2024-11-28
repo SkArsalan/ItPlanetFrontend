@@ -32,29 +32,20 @@ const ProductList = () => {
   };
 
   // Handle update product
-  const handleUpdate = async (productId) => {
-    const updatedData = {
-      product_name: "Updated Product", // Example of updated data
-      description: "Updated Description",
-      price: "1600.00",
-      quantity: "120.00",
-      location: "Updated Location",
-      status: "Available",
-      categories: "Electronics"
-    };
-
-    
-
-    try {
-      await API.put(`/update/${productId}`, updatedData); // Call the PUT /update/:id endpoint
-      fetchProducts(); // Refresh products after update
-    } catch (error) {
-      console.error("Error updating product", error);
-    }
+  const handleUpdate = async (product) => {
+    console.log(product)
+    navigate('/add-product', {state: {product}})
   };
 
-  const handleReceipt = async(productId) => {
-    
+  const handleReceipt = (product) => {
+    // Navigate to the Invoice Generator with default values (quantity set to 1)
+    const productData = {
+      name: product.product_name,
+      description: product.description, // Assuming 'description' is a property of product
+      quantity: 1, // Default quantity
+      price: product.price,
+    };
+    navigate('/invoice-generator', { state: { receiptData: productData } });
   }
 
   return (
@@ -170,10 +161,10 @@ const ProductList = () => {
                     <td>{product.quantity}</td>
                     <td>{product.createdBy}</td>
                     <td>
-                    <button className="btn btn-link text-primary" onClick={() => handleReceipt(product.id)}>
+                    <button className="btn btn-link text-primary" onClick={() => handleReceipt(product)}>
                     <i className="bi bi-receipt"></i>
                       </button>
-                      <button className="btn btn-link text-primary" onClick={() => handleUpdate(product.id)}>
+                      <button className="btn btn-link text-primary" onClick={() => handleUpdate(product)}>
                         <i className="bi bi-pencil-fill"></i>
                       </button>
                       <button className="btn btn-link text-danger" onClick={() => handleDelete(product.id)}>

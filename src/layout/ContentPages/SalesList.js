@@ -1,7 +1,9 @@
 import React from "react";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import { useNavigate } from "react-router-dom";
 
 const SalesList = () => {
+  const navigate = useNavigate()
   return (
     <div className=" container mt-5 page-wrapper">
       <div className="content">
@@ -11,7 +13,10 @@ const SalesList = () => {
           <div className="d-flex justify-content-between mb-2"> <h4 className="fw-bold text-secondary">Sales LIST</h4>
       
       {/* Add New Puchase */}
-      <button className="btn btn-primary text-white">
+      <button 
+      className="btn btn-primary text-white"
+      onClick={() => navigate('/invoice-generator')}
+      >
               <i className="bi bi-plus"></i> Add New Sales
             </button></div> 
             
