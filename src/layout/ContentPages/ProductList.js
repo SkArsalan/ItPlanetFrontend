@@ -43,6 +43,8 @@ const ProductList = () => {
       categories: "Electronics"
     };
 
+    
+
     try {
       await API.put(`/update/${productId}`, updatedData); // Call the PUT /update/:id endpoint
       fetchProducts(); // Refresh products after update
@@ -50,6 +52,10 @@ const ProductList = () => {
       console.error("Error updating product", error);
     }
   };
+
+  const handleReceipt = async(productId) => {
+    
+  }
 
   return (
     <div className="container mt-5">
@@ -132,6 +138,7 @@ const ProductList = () => {
                   </th>
                   <th>Product Name</th>
                   <th>SKU</th>
+                  <th>location</th>
                   <th>Category</th>
                   <th>Brand</th>
                   <th>Price</th>
@@ -155,6 +162,7 @@ const ProductList = () => {
                       {product.product_name}
                     </td>
                     <td>{product.sku}</td>
+                    <td>{product.location}</td>
                     <td>{product.categories}</td>
                     <td>{product.brand}</td>
                     <td>{product.price}</td>
@@ -162,6 +170,9 @@ const ProductList = () => {
                     <td>{product.quantity}</td>
                     <td>{product.createdBy}</td>
                     <td>
+                    <button className="btn btn-link text-primary" onClick={() => handleReceipt(product.id)}>
+                    <i className="bi bi-receipt"></i>
+                      </button>
                       <button className="btn btn-link text-primary" onClick={() => handleUpdate(product.id)}>
                         <i className="bi bi-pencil-fill"></i>
                       </button>

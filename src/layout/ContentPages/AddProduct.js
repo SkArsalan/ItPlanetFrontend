@@ -5,6 +5,7 @@ import { useAuth } from "../../hooks/context/AuthContext"; // Assuming you're us
 import API from "../../api/axios"; // Assuming API is an axios instance configured for your backend
 
 const AddProduct = () => {
+  const { user } = useAuth();
   const initialData = {
     product_name: "",
     description: "",
@@ -12,7 +13,7 @@ const AddProduct = () => {
     status: "Not Ready",
     price: "",
     categories: "",
-    location: "",
+    location: user.location,
   };
   
   const [formData, setFormData] = useState(initialData);
@@ -162,22 +163,20 @@ const AddProduct = () => {
 
                 {/* Location */}
                 <div className="col-lg-3 col-sm-6 col-12">
-                  <div className="form-group">
-                    <label>Location</label>
-                    <select
-                      name="location"
-                      className="form-select"
-                      value={formData.location}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="">Select Location</option>
-                      <option value="Warehouse 1">Warehouse 1</option>
-                      <option value="Warehouse 2">Warehouse 2</option>
-                      <option value="Storefront">Storefront</option>
-                    </select>
-                  </div>
-                </div>
+  <div className="form-group">
+    <label>Location</label>
+    <input
+          type="text"
+          name="location"
+          className="form-control"
+          value={formData.location} // Bind location value to formData
+          onChange={handleChange} // Update formData when input changes
+          required
+          disabled // Disable if you want to make location non-editable (optional)
+        />
+  </div>
+</div>
+
 
                 {/* Buttons */}
                 <div className="col-lg-12 d-flex justify-content-start mt-3">

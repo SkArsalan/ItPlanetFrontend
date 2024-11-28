@@ -9,7 +9,7 @@ import { useAuth } from '../hooks/context/AuthContext';
 
 function Navbar({ toggleSidebar }) {
   const {selectedSection, handleSelectSection} = useSection();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = async () => {
@@ -26,7 +26,7 @@ function Navbar({ toggleSidebar }) {
       >
         <FontAwesomeIcon icon={faBars} /> {/* Sidebar toggle icon */}
       </button>
-      <div className="navbar-title">IT Planet</div>
+      <div className="navbar-title">IT Planet, {user.location}</div>
        {/* Navbar Content */}
        <div className="collapse navbar-collapse d-flex" id="navbarSupportedContent">
         {/* Left Dropdown Menu */}
@@ -82,7 +82,7 @@ function Navbar({ toggleSidebar }) {
               data-bs-toggle="dropdown" 
               aria-expanded="false"
             >
-              Profile
+              {user.username}
             </Link>
             <ul className="dropdown-menu dropdown-menu-end">
               <li>

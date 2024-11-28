@@ -8,7 +8,7 @@ const AuthContext = createContext();
 
 const initialState = {
   isAuthenticated: false,
-  user: null,
+  user: null, // Will hold user details like username, location, etc.
 };
 
 function authReducer(state, action) {
@@ -34,7 +34,10 @@ function AuthProvider({ children }) {
   async function login(credentials) {
     try {
       const response = await API.post('/login', credentials);
-      dispatch({type: 'LOGIN', payload: response.data.user});
+      // Assuming response.data.user contains user details like username and location
+      const user = response.data.user
+      // dispatch({type: 'LOGIN', payload: response.data.user});
+      dispatch({type: 'LOGIN', payload: user});
       return {success: true, message: response.data.message};
     } catch (error) {
       return {success: false, message: error.response?.data?.message || 'Login Failed'}
