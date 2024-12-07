@@ -2,13 +2,14 @@ import React, { useState, useRef, useEffect } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useLocation } from "react-router-dom";
+import API from "../../api/axios";
 
 const InvoiceGenerator = () => {
   const location = useLocation()
+ 
   const [invoice, setInvoice] = useState({
     clientName: "",
-    invoiceDate: "",
-    dueDate: "",
+    invoiceDate: "", 
     invoiceNumber: "",
     items: [],
     total: 0,
@@ -16,40 +17,85 @@ const InvoiceGenerator = () => {
     routingNumber: "120000547",
   });
 
-  const initialItem ={ item_name: "",description: "", qty: 1, price: 0, subtotal: 0 }
+  const initialItem ={ item_name: "",description: "", qty: 0, price: 0, subtotal: 0 }
 
   const [item, setItem] = useState(initialItem);
   const [editIndex, setEditIndex] = useState(null);
   const invoiceRef = useRef(null);
 
-  useEffect(() => {
-    // Only run this effect if location.state.receiptData exists and item isn't already in invoice
-    if (location.state && location.state.receiptData) {
-      const receiptItem = location.state.receiptData;
-      const newItem = {
-        item_name: receiptItem.name,
-        description: receiptItem.description,
-        qty: receiptItem.quantity,
-        price: receiptItem.price,
-        subtotal: receiptItem.quantity * receiptItem.price,
-      };
+  // useEffect(() => {
+  //   // Only run this effect if location.state.receiptData exists and item isn't already in invoice
+  //   if (location.state && location.state.receiptData) {
+  //     const receiptItem = location.state.receiptData;
+  //     const newItem = {
+  //       item_name: receiptItem.name,
+  //       description: receiptItem.description,
+  //       qty: receiptItem.quantity,
+  //       price: receiptItem.price,
+  //       subtotal: receiptItem.quantity * receiptItem.price,
+  //     };
+      
 
-      // Check if the item already exists in the invoice to avoid duplicates
-      setInvoice((prev) => {
-        const itemExists = prev.items.some(item => item.item_name === newItem.item_name);
+  //     // Check if the item already exists in the invoice to avoid duplicates
+  //     setInvoice((prev) => {
+  //       const itemExists = prev.items.some(item => item.item_name === newItem.item_name);
 
-        if (itemExists) {
-          return prev; // Do nothing if the item already exists
-        }
+  //       if (itemExists) {
+  //         return prev; // Do nothing if the item already exists
+  //       }
 
-        return {
-          ...prev,
-          items: [...prev.items, newItem],
-          total: prev.total + newItem.subtotal,
+  //       return {
+  //         ...prev,
+  //         items: [...prev.items, newItem],
+  //         total: prev.total + newItem.subtotal,
+  //       };
+  //     });
+  //   }
+  // }, [location.state]); 
+
+
+useEffect(() => {
+  const fetchItemDetails = async () => {
+    try {
+      if (location.state && location.state.receiptData) {
+        const receiptId = location.state.receiptData.id; // Assuming `receiptData` includes an ID
+        const response = await API.get(`/item/${receiptId}`);
+        
+        const receiptItem = response.data; // Adjust based on API response structure
+        const newItem = {
+          item_name: receiptItem.product_name,
+          description: receiptItem.description,
+          qty: receiptItem.quantity,
+          price: receiptItem.price,
+          subtotal: receiptItem.quantity * receiptItem.price,
         };
-      });
+
+        // Check if the item already exists in the invoice to avoid duplicates
+        setInvoice((prev) => {
+          const itemExists = prev.items.some(
+            (item) => item.item_name === newItem.item_name
+          );
+
+          if (itemExists) {
+            return prev; // Do nothing if the item already exists
+          }
+
+          return {
+            ...prev,
+            items: [...prev.items, newItem],
+            total: prev.total + newItem.subtotal,
+          };
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching receipt data:", error);
+      // Optionally, add user feedback like a toast or error message
     }
-  }, [location.state]); 
+  };
+
+  fetchItemDetails();
+}, [location.state]);
+
 
   // Add or Update Item
   const saveItem = () => {
@@ -112,6 +158,8 @@ const InvoiceGenerator = () => {
 
   // Export PDF Function
   const exportToPDF = async () => {
+
+    try{
     // Hide Edit and Delete buttons before exporting
     const buttons = document.querySelectorAll('.no-print');
     buttons.forEach(button => button.style.display = 'none');
@@ -127,8 +175,37 @@ const InvoiceGenerator = () => {
     pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
     pdf.save("invoice.pdf");
 
+   // Subtract Item Quantities from the Database
+   const updateStockRequests = invoice.items.map(item => {
+    const payload = {
+      itemName: item.item_name, // Ensure this matches the Flask backend field
+      quantitySold: parseInt(item.qty, 10), // Ensure qty is an integer
+    };
+
+    console.log("Payload for stock update:", payload); // Debugging log
+
+    // Send PUT request to update stock
+    return API.put('/update-stock', payload)
+      .then(response => {
+        console.log(`Stock updated for ${payload.itemName}:`, response.data);
+      })
+      .catch(error => {
+        console.error(`Error updating stock for ${payload.itemName}:`, error.response?.data || error.message);
+        throw new Error(`Failed to update stock for ${payload.itemName}`);
+      });
+  });
+
+  // Wait for all stock update requests to complete
+  await Promise.all(updateStockRequests);
+
+
     // Restore buttons after export
     buttons.forEach(button => button.style.display = '');
+    alert("PDF exported and stock updated successfully")
+  } catch(error){
+    console.error("Error exporting PDF or updating stock:", error);
+    alert("An error occurred while exporting the PDF or updating stock.");
+  }
   };
 
   return (
@@ -158,7 +235,7 @@ const InvoiceGenerator = () => {
                 onChange={handleInputChange}
               />
             </div>
-            <div className="col">
+            {/* <div className="col">
               <label className="form-label">Due Date</label>
               <input
                 type="date"
@@ -167,7 +244,7 @@ const InvoiceGenerator = () => {
                 value={invoice.dueDate}
                 onChange={handleInputChange}
               />
-            </div>
+            </div> */}
           </div>
           <div className="mb-3 mt-3">
             <label className="form-label">Mobile Number</label>
@@ -238,7 +315,7 @@ const InvoiceGenerator = () => {
         </div>
         <p><strong>Client:</strong> {invoice.clientName}</p>
         <p><strong>Date:</strong> {invoice.invoiceDate}</p>
-        <p><strong>Due:</strong> {invoice.dueDate}</p>
+        {/* <p><strong>Due:</strong> {invoice.dueDate}</p> */}
         <p><strong>Number:</strong> {invoice.invoiceNumber}</p>
         <table className="table">
           <thead>
@@ -279,7 +356,7 @@ const InvoiceGenerator = () => {
   ))}
 </tbody>
         </table>
-        <h4>Total: ${invoice.total}</h4>
+        <h4>Total: Rs.{invoice.total}</h4>
         <p><strong>Account:</strong> {invoice.accountNumber}</p>
         <p><strong>Routing:</strong> {invoice.routingNumber}</p>
         <p className="text-muted">Owner's Signature: __________________</p>

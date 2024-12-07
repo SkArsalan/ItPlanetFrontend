@@ -40,6 +40,7 @@ const ProductList = () => {
   const handleReceipt = (product) => {
     // Navigate to the Invoice Generator with default values (quantity set to 1)
     const productData = {
+      id: product.id,
       name: product.product_name,
       description: product.description, // Assuming 'description' is a property of product
       quantity: 1, // Default quantity
