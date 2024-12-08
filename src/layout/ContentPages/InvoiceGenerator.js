@@ -1,27 +1,48 @@
 import React, { useState, useRef, useEffect } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import API from "../../api/axios";
 
 const InvoiceGenerator = () => {
   const location = useLocation()
+  const navigate = useNavigate()
  
-  const [invoice, setInvoice] = useState({
+  const initialInvoice = {
     clientName: "",
     invoiceDate: "", 
     invoiceNumber: "",
+    MobileNumber: "",
     items: [],
     total: 0,
     accountNumber: "123567744",
-    routingNumber: "120000547",
-  });
+  }
+  const [invoice, setInvoice] = useState(initialInvoice);
 
   const initialItem ={ item_name: "",description: "", qty: 0, price: 0, subtotal: 0 }
 
   const [item, setItem] = useState(initialItem);
   const [editIndex, setEditIndex] = useState(null);
   const invoiceRef = useRef(null);
+
+   // Set current date and generate invoice number
+   useEffect(() => {
+    const today = new Date();
+    const formattedDate = today
+      .toLocaleDateString("en-GB")
+      .split("/")
+      .reverse()
+      .join("-"); // Convert to YYYY-MM-DD
+
+    const generatedInvoiceNumber = `INV-${Date.now()}`; // Unique invoice number based on timestamp
+
+    setInvoice((prev) => ({
+      ...prev,
+      invoiceDate: formattedDate,
+      invoiceNumber: generatedInvoiceNumber,
+    }));
+  }, []);
+
 
   // useEffect(() => {
   //   // Only run this effect if location.state.receiptData exists and item isn't already in invoice
@@ -65,9 +86,10 @@ useEffect(() => {
         const newItem = {
           item_name: receiptItem.product_name,
           description: receiptItem.description,
-          qty: receiptItem.quantity,
+          // qty: receiptItem.quantity,
+          qty: 1,
           price: receiptItem.price,
-          subtotal: receiptItem.quantity * receiptItem.price,
+          subtotal: 1 * receiptItem.price,
         };
 
         // Check if the item already exists in the invoice to avoid duplicates
@@ -156,6 +178,11 @@ useEffect(() => {
     window.print();
   };
 
+  const handleClearLocation = () => {
+    // Update the state of the current location
+    navigate(location.pathname, { state: null });
+  };
+
   // Export PDF Function
   const exportToPDF = async () => {
 
@@ -202,6 +229,11 @@ useEffect(() => {
     // Restore buttons after export
     buttons.forEach(button => button.style.display = '');
     alert("PDF exported and stock updated successfully")
+    // Reset invoice state and clear the table
+    setInvoice(initialInvoice); // Clear invoice state
+    setItem(initialItem);   // Clear item state
+    handleClearLocation();
+    window.location.reload();
   } catch(error){
     console.error("Error exporting PDF or updating stock:", error);
     alert("An error occurred while exporting the PDF or updating stock.");
@@ -235,24 +267,24 @@ useEffect(() => {
                 onChange={handleInputChange}
               />
             </div>
-            {/* <div className="col">
-              <label className="form-label">Due Date</label>
+            <div className="col">
+              <label className="form-label">Invoice Number</label>
               <input
-                type="date"
+                type="text"
                 className="form-control"
-                name="dueDate"
-                value={invoice.dueDate}
+                name="invoiceNumber"
+                value={invoice.invoiceNumber}
                 onChange={handleInputChange}
               />
-            </div> */}
+            </div>
           </div>
           <div className="mb-3 mt-3">
             <label className="form-label">Mobile Number</label>
             <input
               type="text"
               className="form-control"
-              name="invoiceNumber"
-              value={invoice.invoiceNumber}
+              name="MobileNumber"
+              value={invoice.MobileNumber}
               onChange={handleInputChange}
             />
           </div>
@@ -316,7 +348,8 @@ useEffect(() => {
         <p><strong>Client:</strong> {invoice.clientName}</p>
         <p><strong>Date:</strong> {invoice.invoiceDate}</p>
         {/* <p><strong>Due:</strong> {invoice.dueDate}</p> */}
-        <p><strong>Number:</strong> {invoice.invoiceNumber}</p>
+        <p><strong>Invoice Number:</strong> {invoice.invoiceNumber}</p>
+        <p><strong>Mobile Number:</strong> {invoice.MobileNumber}</p>
         <table className="table">
           <thead>
             <tr>
@@ -358,7 +391,6 @@ useEffect(() => {
         </table>
         <h4>Total: Rs.{invoice.total}</h4>
         <p><strong>Account:</strong> {invoice.accountNumber}</p>
-        <p><strong>Routing:</strong> {invoice.routingNumber}</p>
         <p className="text-muted">Owner's Signature: __________________</p>
       </div>
 

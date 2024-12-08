@@ -1,6 +1,6 @@
 // src/context/AuthContext.js
 
-import React, { createContext, useContext, useReducer } from "react";
+import React, { createContext, useContext, useEffect, useReducer } from "react";
 import API from "../../api/axios";
 
 
@@ -29,7 +29,14 @@ function authReducer(state, action) {
 }
 
 function AuthProvider({ children }) {
-  const [state, dispatch] = useReducer(authReducer, initialState);
+  const [state, dispatch] = useReducer(authReducer, initialState, () => {
+    const storedState = localStorage.getItem("authState");
+    return storedState ? JSON.parse(storedState) : initialState;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("authState", JSON.stringify(state));
+  }, [state]);
 
   async function login(credentials) {
     try {

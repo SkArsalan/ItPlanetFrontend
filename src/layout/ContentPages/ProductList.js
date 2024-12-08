@@ -1,25 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import API from "../../api/axios";
+import { useAuth } from "../../hooks/context/AuthContext";
 
 
 const ProductList = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const { user, isAuthenticated } = useAuth();
   
   // Fetch products from backend
   const fetchProducts = async () => {
     try {
-      const response = await API.get("/list"); // Call the GET /list endpoint
+      // Ensure that the user has a location set
+      if (!user?.location) {
+        console.error("User location is not set");
+        return;
+      }
+
+      const response = await API.get(`/list/${user.location}`); // Call the GET /list endpoint
       setProducts(response.data.inventory); // Set products in state
     } catch (error) {
       console.error("Error fetching products", error);
     }
   };
-
+  
   useEffect(() => {
-    fetchProducts(); // Fetch products when component mounts
-  }, []);
+    if (isAuthenticated) {
+      fetchProducts(); // Fetch products when component mounts and the user is authenticated
+    } else {
+      navigate("/login"); // Redirect to login if not authenticated
+    }
+  }, [isAuthenticated, user?.location]);
 
   // Handle delete product
   const handleDelete = async (productId) => {

@@ -107,6 +107,7 @@ const AddProduct = () => {
                       required
                     >
                       <option value="">Choose Category</option>
+                      <option value="Laptop">Laptop</option>
                       <option value="Accessories">Accessories</option>
                       <option value="CCTV">CCTV</option>
                     </select>

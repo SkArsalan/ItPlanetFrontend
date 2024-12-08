@@ -26,6 +26,7 @@ function Sidebar({ isOpen }) {
         { path: '/quotation-list', label: 'Laptop Quotation' },
        ]}
        />
+       <SidebarMenu path="/product-list" label="Stock"/>
        </ul>
         );
       case 'Accessories Section':
@@ -49,7 +50,7 @@ function Sidebar({ isOpen }) {
        ]}
        />
        
-       <SidebarMenu path="/product-list" label="Stock"/>
+       
        </ul>
         );
         case 'GST Section':
