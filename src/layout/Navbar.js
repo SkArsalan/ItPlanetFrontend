@@ -53,7 +53,7 @@ function Navbar({ toggleSidebar }) {
               <li>
                 <Link 
                   className="dropdown-item" 
-                  to="#"
+                  to="/product-list"
                   onClick={() => handleSelectSection('Laptop Section')}
                 >
                   Laptop Section

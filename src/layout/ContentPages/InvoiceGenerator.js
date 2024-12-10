@@ -3,23 +3,27 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../../api/axios";
+import { useAuth } from "../../hooks/context/AuthContext";
 
 const InvoiceGenerator = () => {
   const location = useLocation()
   const navigate = useNavigate()
+  const {user} = useAuth()
  
   const initialInvoice = {
     clientName: "",
-    invoiceDate: "", 
+    invoiceDate: "",
     invoiceNumber: "",
     MobileNumber: "",
     items: [],
     total: 0,
-    accountNumber: "123567744",
+    paid: 0, // Highlighted Addition
+    createdBy: user.username || "Admin",
+    
   }
   const [invoice, setInvoice] = useState(initialInvoice);
 
-  const initialItem ={ item_name: "",description: "", qty: 0, price: 0, subtotal: 0 }
+  const initialItem ={ item_id:0,item_name: "",description: "", qty: 0, price: 0, subtotal: 0 }
 
   const [item, setItem] = useState(initialItem);
   const [editIndex, setEditIndex] = useState(null);
@@ -84,6 +88,7 @@ useEffect(() => {
         
         const receiptItem = response.data; // Adjust based on API response structure
         const newItem = {
+          item_id: receiptId,
           item_name: receiptItem.product_name,
           description: receiptItem.description,
           // qty: receiptItem.quantity,
@@ -187,10 +192,19 @@ useEffect(() => {
   const exportToPDF = async () => {
 
     try{
+
+      // Validation: Check if required fields are filled
+    if (!invoice.clientName || !invoice.MobileNumber || !invoice.paid) {
+      alert('Please fill all required fields before exporting!');
+      return; // Stop execution if validation fails
+    }
+
     // Hide Edit and Delete buttons before exporting
     const buttons = document.querySelectorAll('.no-print');
     buttons.forEach(button => button.style.display = 'none');
 
+    const response = await API.post("/save-invoice", invoice);
+    if (response.status === 201) {
     // Use html2canvas to generate image for PDF
     const canvas = await html2canvas(invoiceRef.current, { scale: 2 });
     const imgData = canvas.toDataURL("image/png");
@@ -200,35 +214,38 @@ useEffect(() => {
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
     pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save("invoice.pdf");
+    pdf.save(`${invoice.clientName}_invoice.pdf`);
+    alert("PDF exported successfully");
+    } else {
+      // If the request fails, show an error alert and do not generate the PDF
+      alert('Failed to save invoice. PDF will not be generated.');
+    }
 
-   // Subtract Item Quantities from the Database
-   const updateStockRequests = invoice.items.map(item => {
-    const payload = {
-      itemName: item.item_name, // Ensure this matches the Flask backend field
-      quantitySold: parseInt(item.qty, 10), // Ensure qty is an integer
-    };
+  //  // Subtract Item Quantities from the Database
+  //  const updateStockRequests = invoice.items.map(item => {
+  //   const payload = {
+  //     itemName: item.item_name, // Ensure this matches the Flask backend field
+  //     quantitySold: parseInt(item.qty, 10), // Ensure qty is an integer
+  //   };
 
-    console.log("Payload for stock update:", payload); // Debugging log
+  //   console.log("Payload for stock update:", payload); // Debugging log
 
-    // Send PUT request to update stock
-    return API.put('/update-stock', payload)
-      .then(response => {
-        console.log(`Stock updated for ${payload.itemName}:`, response.data);
-      })
-      .catch(error => {
-        console.error(`Error updating stock for ${payload.itemName}:`, error.response?.data || error.message);
-        throw new Error(`Failed to update stock for ${payload.itemName}`);
-      });
-  });
+  //   // Send PUT request to update stock
+  //   return API.put('/update-stock', payload)
+  //     .then(response => {
+  //       console.log(`Stock updated for ${payload.itemName}:`, response.data);
+  //     })
+  //     .catch(error => {
+  //       console.error(`Error updating stock for ${payload.itemName}:`, error.response?.data || error.message);
+  //       throw new Error(`Failed to update stock for ${payload.itemName}`);
+  //     });
+  // });
 
-  // Wait for all stock update requests to complete
-  await Promise.all(updateStockRequests);
-
-
+  // // Wait for all stock update requests to complete
+  // await Promise.all(updateStockRequests);
     // Restore buttons after export
     buttons.forEach(button => button.style.display = '');
-    alert("PDF exported and stock updated successfully")
+    
     // Reset invoice state and clear the table
     setInvoice(initialInvoice); // Clear invoice state
     setItem(initialItem);   // Clear item state
@@ -254,6 +271,7 @@ useEffect(() => {
               name="clientName"
               value={invoice.clientName}
               onChange={handleInputChange}
+              required
             />
           </div>
           <div className="row">
@@ -286,8 +304,43 @@ useEffect(() => {
               name="MobileNumber"
               value={invoice.MobileNumber}
               onChange={handleInputChange}
+              required
             />
           </div>
+          <div className="mb-3">
+  <style>
+    {`
+      .no-scroll::-webkit-inner-spin-button,
+      .no-scroll::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      .no-scroll {
+        -moz-appearance: textfield; /* For Firefox */
+      }
+      .no-scroll::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+        display: none; /* Hides outer spin button */
+      }
+      .no-scroll::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+        display: none; /* Hides inner spin button */
+      }
+    `}
+  </style>
+  <label className="form-label">Paid</label>
+  <input
+    type="number"
+    className="form-control no-scroll"
+    name="paid"
+    value={invoice.paid}
+    onChange={handleInputChange}
+    placeholder="Enter the amount paid"
+    required
+  />
+</div>
         </form>
       </div>
 
@@ -334,24 +387,41 @@ useEffect(() => {
             onChange={handleItemChange}
           />
         </div>
+        
       </div>
+      
       <button className="btn btn-primary mb-4" onClick={saveItem}>
         {editIndex !== null ? "Update Item" : "Add Item"}
       </button>
 
       {/* Invoice Preview */}
       <div ref={invoiceRef} className="invoice-preview p-4 border" style={{ background: "white" }}>
+      
         <div className="d-flex justify-content-between align-items-center">
-          <h1>Invoice</h1>
-          <img src="logo512.png" alt="Company Logo" style={{ height: "50px" }} />
+        <div>
+        <h1>IT Planet, {user.location}</h1>
+        <p>{user.location === "Nanded" ? "Neaar water Tank, Workshop corner, Nanded, Maharashtra-431605"
+         : "Mirtra Nagar Corner, Main Road, Ch. Shivaji Chowk, Latur-413512"} 
+          <br /> <b>Mobile:</b> 7385154843, {user.location === "Nanded" ? "8421145259" : "7774837006"} 
+          <br /> <b>Email:</b> itplanet4843@gmail.com</p>
         </div>
-        <p><strong>Client:</strong> {invoice.clientName}</p>
-        <p><strong>Date:</strong> {invoice.invoiceDate}</p>
-        {/* <p><strong>Due:</strong> {invoice.dueDate}</p> */}
-        <p><strong>Invoice Number:</strong> {invoice.invoiceNumber}</p>
-        <p><strong>Mobile Number:</strong> {invoice.MobileNumber}</p>
+          <img src="logo999.jpeg" alt="Company Logo" style={{ height: "120px" }} />
+        </div>
+        <hr />
+        <div className="d-flex justify-content-center align-items-center">
+        <h1><u>Invoice</u></h1>
+        </div>
+        <div className="container  mb-3">
+  <div className="row row-cols-2 g-3">
+    <div className="col"><strong>Client:</strong> {invoice.clientName}</div>
+    <div className="col"><strong>Date:</strong> {invoice.invoiceDate}</div>
+    <div className="col"><strong>Mobile Number:</strong> {invoice.MobileNumber}</div>
+    <div className="col"><strong>Invoice Number:</strong> {invoice.invoiceNumber}</div>
+  </div>
+</div>
+    
         <table className="table">
-          <thead>
+          <thead className="table-dark">
             <tr>
               <th>Item Name with Description</th>
               <th>Quantity</th>
@@ -389,9 +459,10 @@ useEffect(() => {
   ))}
 </tbody>
         </table>
-        <h4>Total: Rs.{invoice.total}</h4>
-        <p><strong>Account:</strong> {invoice.accountNumber}</p>
-        <p className="text-muted">Owner's Signature: __________________</p>
+        <div className="mb-3"><h4>Total: Rs. {invoice.total}</h4></div>
+        <div className="mb-3"><h4><strong>Paid: Rs. </strong> {invoice.paid}</h4></div>
+        <p className="text-muted">Owner's Signature: <u>{user.username}</u></p>
+        <hr />
       </div>
 
       {/* Print and Export Buttons */}
