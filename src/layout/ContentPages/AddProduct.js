@@ -16,9 +16,14 @@ const AddProduct = () => {
     description: "",
     quantity: "",
     status: "Not Ready",
-    price: "",
+    purchase_price: "",
+    selling_price: "",
     categories: "",
     location: user.location,
+    date: new Date().toLocaleDateString("en-GB")
+    .split("/")
+    .reverse()
+    .join("-"),
   };
   
   const [formData, setFormData] = useState(initialData);
@@ -36,6 +41,7 @@ const AddProduct = () => {
   }
 
   async function handleSubmit(e) {
+    console.log(formData)
     e.preventDefault();
 
     if (!isAuthenticated) {
@@ -128,21 +134,49 @@ const AddProduct = () => {
                     />
                   </div>
                 </div>
+                {/* {Purchase_price} */}
+                <div className="col-lg-3 col-sm-6 col-12">
+                  <div className="form-group">
+                    <label>Purchase Price</label>
+                    <input type="number"
+                    name="purchase_price"
+                    className="form-control"
+                    value={formData.purchase_price}
+                    onChange={handleChange}
+                    required
+                    />
+                  </div>
+                </div>
 
                 {/* Price */}
                 <div className="col-lg-3 col-sm-6 col-12">
                   <div className="form-group">
-                    <label>Price</label>
+                    <label>Selling Price</label>
                     <input
                       type="number"
-                      name="price"
+                      name="selling_price"
                       className="form-control"
-                      value={formData.price}
+                      value={formData.selling_price}
                       onChange={handleChange}
                       required
                     />
                   </div>
                 </div>
+                {/* Purchase Date */}
+
+                <div className="col-lg-3 col-sm-6 col-12">
+                  <div className="form-group">
+                    <label>Date</label>
+                    <input 
+                    type="date"
+                    name="date"
+                    className="form-control"
+                    value={formData.date}
+                    onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
 
                 {/* Description */}
                 <div className="col-lg-12">

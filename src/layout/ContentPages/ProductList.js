@@ -56,7 +56,7 @@ const ProductList = () => {
       name: product.product_name,
       description: product.description, // Assuming 'description' is a property of product
       quantity: 1, // Default quantity
-      price: product.price,
+      selling_price: product.selling_price,
     };
     navigate('/invoice-generator', { state: { receiptData: productData } });
   }
@@ -145,7 +145,7 @@ const ProductList = () => {
                   <th>location</th>
                   <th>Category</th>
                   <th>Brand</th>
-                  <th>Price</th>
+                  <th>selling_price</th>
                   <th>Unit</th>
                   <th>Qty</th>
                   <th>Created By</th>
@@ -169,7 +169,7 @@ const ProductList = () => {
                     <td>{product.location}</td>
                     <td>{product.categories}</td>
                     <td>{product.brand}</td>
-                    <td>{product.price}</td>
+                    <td>{product.selling_price}</td>
                     <td>{product.unit}</td>
                     <td>{product.quantity}</td>
                     <td>{product.createdBy}</td>

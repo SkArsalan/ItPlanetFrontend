@@ -23,7 +23,7 @@ const InvoiceGenerator = () => {
   }
   const [invoice, setInvoice] = useState(initialInvoice);
 
-  const initialItem ={ item_id:0,item_name: "",description: "", qty: 0, price: 0, subtotal: 0 }
+  const initialItem ={ item_id:0,item_name: "",description: "", qty: 0, selling_price: 0, subtotal: 0 }
 
   const [item, setItem] = useState(initialItem);
   const [editIndex, setEditIndex] = useState(null);
@@ -56,8 +56,8 @@ const InvoiceGenerator = () => {
   //       item_name: receiptItem.name,
   //       description: receiptItem.description,
   //       qty: receiptItem.quantity,
-  //       price: receiptItem.price,
-  //       subtotal: receiptItem.quantity * receiptItem.price,
+  //       selling_price: receiptItem.selling_price,
+  //       subtotal: receiptItem.quantity * receiptItem.selling_price,
   //     };
       
 
@@ -93,8 +93,8 @@ useEffect(() => {
           description: receiptItem.description,
           // qty: receiptItem.quantity,
           qty: 1,
-          price: receiptItem.price,
-          subtotal: 1 * receiptItem.price,
+          selling_price: receiptItem.selling_price,
+          subtotal: 1 * receiptItem.selling_price,
         };
 
         // Check if the item already exists in the invoice to avoid duplicates
@@ -178,11 +178,7 @@ useEffect(() => {
     setItem((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Print Invoice
-  const printInvoice = () => {
-    window.print();
-  };
-
+  
   const handleClearLocation = () => {
     // Update the state of the current location
     navigate(location.pathname, { state: null });
@@ -382,8 +378,8 @@ useEffect(() => {
           <input
             type="number"
             className="form-control"
-            name="price"
-            value={item.price}
+            name="selling_price"
+            value={item.selling_price}
             onChange={handleItemChange}
           />
         </div>
@@ -425,7 +421,7 @@ useEffect(() => {
             <tr>
               <th>Item Name with Description</th>
               <th>Quantity</th>
-              <th>Price</th>
+              <th>Selling Price</th>
               <th>Subtotal</th>
             </tr>
           </thead>
@@ -439,7 +435,7 @@ useEffect(() => {
         </span>
       </td>
       <td>{item.qty}</td>
-      <td>{item.price}</td>
+      <td>{item.selling_price}</td>
       <td>{item.subtotal}</td>
       <td>
         <button
@@ -467,9 +463,7 @@ useEffect(() => {
 
       {/* Print and Export Buttons */}
       <div className="mt-4">
-        <button className="btn btn-secondary me-2" onClick={printInvoice}>
-          Print
-        </button>
+        
         <button className="btn btn-success" onClick={exportToPDF}>
           Export as PDF
         </button>
