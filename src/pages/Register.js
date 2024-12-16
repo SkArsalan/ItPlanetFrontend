@@ -3,6 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
 import API from '../api/axios';
 
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+const MySwal = withReactContent(Swal);
+
+
 function Register() {
     const navigate = useNavigate();
 
@@ -23,6 +28,17 @@ function Register() {
           alert('Passwords do not match');
           return;
       }
+
+      // Show loading popup while the registration request is in progress
+      MySwal.fire({
+        title: <p>Registering...</p>,
+        html: <p>Please wait while we register your account.</p>,
+        allowOutsideClick: false,
+        didOpen: () => {
+          MySwal.showLoading();
+        },
+      });
+
   
       try{
         const response = await API.post('/register', {
@@ -32,10 +48,22 @@ function Register() {
         confirm_password: confirmPassword,
         location,
         })
-        alert('Registration successful!');
+        // Show success popup after registration is successful
+        MySwal.fire({
+            icon: 'success',
+            title: <p>Registration Successful</p>,
+            html: <p>You can now log in with your credentials!</p>,
+            timer: 3000,
+            showConfirmButton: false,
+          });
       navigate('/login', { replace: true });
       }catch (error) {
-        alert(error.response?.data?.message || 'Registration failed');
+       // Show error popup if registration fails
+       MySwal.fire({
+        icon: 'error',
+        title: <p>Registration Failed</p>,
+        html: <p>{error.response?.data?.message || 'Something went wrong. Please try again.'}</p>,
+      });
       }
   }
   

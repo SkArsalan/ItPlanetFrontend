@@ -5,6 +5,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import API from "../../api/axios";
 import { useAuth } from "../../hooks/context/AuthContext";
 
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+
+const MySwal = withReactContent(Swal); 
+
 const InvoiceGenerator = () => {
   const location = useLocation()
   const navigate = useNavigate()
@@ -195,6 +200,15 @@ useEffect(() => {
       return; // Stop execution if validation fails
     }
 
+    // Show SweetAlert2 Loading popup
+    MySwal.fire({
+      title: <p>Exporting Invoice...</p>,
+      html: <p>Please wait while we generate the PDF.</p>,
+      allowOutsideClick: false,
+      didOpen: () => {
+        MySwal.showLoading();
+      },
+    }); // Highlighted: Added loading popup before export starts
     // Hide Edit and Delete buttons before exporting
     const buttons = document.querySelectorAll('.no-print');
     buttons.forEach(button => button.style.display = 'none');
@@ -211,10 +225,20 @@ useEffect(() => {
 
     pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
     pdf.save(`${invoice.clientName}_invoice.pdf`);
-    alert("PDF exported successfully");
+      // Show SweetAlert2 success popup
+      MySwal.fire({
+        icon: "success",
+        title: <p>Invoice Exported Successfully</p>,
+        html: <p>The invoice was successfully exported as a PDF.</p>,
+        timer: 3000,
+        showConfirmButton: false,
+      }); // Highlighted: Added success popup after export is complete
     } else {
-      // If the request fails, show an error alert and do not generate the PDF
-      alert('Failed to save invoice. PDF will not be generated.');
+      MySwal.fire({
+        icon: "error",
+        title: <p>Export Failed</p>,
+        html: <p>Failed to save the invoice. PDF will not be generated.</p>,
+      }); // Highlighted: Error alert if the API request fails
     }
 
   //  // Subtract Item Quantities from the Database
@@ -249,7 +273,13 @@ useEffect(() => {
     window.location.reload();
   } catch(error){
     console.error("Error exporting PDF or updating stock:", error);
-    alert("An error occurred while exporting the PDF or updating stock.");
+     // Show SweetAlert2 error popup
+    // Show SweetAlert2 error popup
+    MySwal.fire({
+      icon: "error",
+      title: <p>An Error Occurred</p>,
+      html: <p>There was an issue exporting the PDF. Please try again.</p>,
+    });
   }
   };
 

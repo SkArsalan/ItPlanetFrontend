@@ -5,6 +5,11 @@ import { useAuth } from "../../hooks/context/AuthContext"; // Assuming you're us
 import API from "../../api/axios"; // Assuming API is an axios instance configured for your backend
 import { useLocation, useNavigate } from "react-router-dom";
 
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import "sweetalert2/dist/sweetalert2.min.css";
+
+
 const AddProduct = () => {
   const { user } = useAuth();
   const location = useLocation();
@@ -45,10 +50,27 @@ const AddProduct = () => {
     e.preventDefault();
 
     if (!isAuthenticated) {
-      alert("User is not authenticated. Please log in first.");
+      Swal.fire({
+        icon: "error",
+        title: "Authentication Required",
+        text: "User is not authenticated. Please log in first.",
+      });
       return;
     }
     console.log("Submitting data", formData);
+
+    // Display the loading SweetAlert2
+  const MySwal = withReactContent(Swal);
+  MySwal.fire({
+    title: "Processing...",
+    text: "Please wait while we process your request.",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false,
+    willOpen: () => {
+      Swal.showLoading();
+    },
+  });
 
     const endpoint = productToEdit ? `/update/${productToEdit.id}` //Update endpoint if editing
      : "/add"; //Add endpoint if creating
@@ -58,18 +80,41 @@ const AddProduct = () => {
     try {
       const response = await API[method](endpoint, formData);
 
-      alert(response.data.message || "Product saved successfully");
+       // Close the loading SweetAlert2 and show success message
+    Swal.fire({
+      icon: "success",
+      title: "Success",
+      text: response.data.message || "Product saved successfully",
+    });
+
       productToEdit ? navigate("/product-list") : setFormData(initialData); // Reset form
     } catch (error) {
       console.error("Error adding product:", error);
       const errorMessage = error.response?.data?.message || "An error occurred while adding the product";
-      alert(errorMessage);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: errorMessage || "An error occurred while saving the product",
+      });
     }
   }
 
   function handleCancel() {
-    productToEdit ? navigate("/product-list") : setFormData(initialData);
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Your changes will not be saved.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, cancel",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        productToEdit ? navigate("/product-list") : setFormData(initialData);
+      }
+    });
   }
+  
 
   return (
     <div className="page-wrapper">

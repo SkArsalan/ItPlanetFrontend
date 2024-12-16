@@ -3,6 +3,12 @@ import './Login.css';
 import { useState } from 'react';
 import { useAuth } from '../hooks/context/AuthContext';
 
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+// Initialize SweetAlert2 with React content
+const MySwal = withReactContent(Swal);
+
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,11 +19,34 @@ function Login() {
   async function handleSubmit(e) {
     e.preventDefault();
 
+    // Show SweetAlert2 loading popup
+    MySwal.fire({
+      title: <p>Logging in...</p>,
+      html: <p>Please wait while we authenticate your credentials.</p>,
+      allowOutsideClick: false,
+      didOpen: () => {
+        MySwal.showLoading();
+      },
+    });
+
     const result = await login({email, password, location});
     if (result.success){
+       // Show success popup after login is successful
+       MySwal.fire({
+        icon: 'success',
+        title: <p>Login Successful</p>,
+        html: <p>Welcome to IT Planet, {result.username || 'User'}!</p>,
+        timer: 2000,
+        showConfirmButton: false,
+      });
       navigate('/');
     } else{
-      alert(result.message)
+       // Show error popup if login fails
+       MySwal.fire({
+        icon: 'error',
+        title: <p>Login Failed</p>,
+        html: <p>{result.message || 'Invalid credentials. Please try again.'}</p>,
+      });
     }
   }
 
