@@ -1,225 +1,202 @@
+
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import DataTable from "react-data-table-component";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable"; // Add this import
+import * as XLSX from "xlsx";
 import API from "../../api/axios";
 import { useAuth } from "../../hooks/context/AuthContext";
-
+import "./TableContents/DropDown.css"
 
 const ProductList = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [searchText, setSearchText] = useState("");
   const { user, isAuthenticated } = useAuth();
-  
-  // Fetch products from backend
+
   const fetchProducts = async () => {
     try {
-      // Ensure that the user has a location set
       if (!user?.location) {
         console.error("User location is not set");
         return;
       }
 
-      const response = await API.get(`/list/${user.location}`); // Call the GET /list endpoint
-      setProducts(response.data.inventory); // Set products in state
+      const response = await API.get(`/list/${user.location}`);
+      setProducts(response.data.inventory);
+      setFilteredProducts(response.data.inventory);
     } catch (error) {
       console.error("Error fetching products", error);
     }
   };
-  
+
   useEffect(() => {
     if (isAuthenticated) {
-      fetchProducts(); // Fetch products when component mounts and the user is authenticated
+      fetchProducts();
     } else {
-      navigate("/login"); // Redirect to login if not authenticated
+      navigate("/login");
     }
   }, [isAuthenticated, user?.location]);
 
-  // Handle delete product
   const handleDelete = async (productId) => {
     try {
-      await API.delete(`/delete/${productId}`); // Call the DELETE /delete/:id endpoint
-      setProducts(products.filter(product => product.id !== productId)); // Update state after deletion
+      await API.delete(`/delete/${productId}`);
+      const updatedProducts = products.filter((product) => product.id !== productId);
+      setProducts(updatedProducts);
+      setFilteredProducts(updatedProducts);
     } catch (error) {
       console.error("Error deleting product", error);
     }
   };
 
-  // Handle update product
-  const handleUpdate = async (product) => {
-    console.log(product)
-    navigate('/add-product', {state: {product}})
+  const handleUpdate = (product) => {
+    navigate("/add-product", { state: { product } });
   };
 
   const handleReceipt = (product) => {
-    // Navigate to the Invoice Generator with default values (quantity set to 1)
     const productData = {
       id: product.id,
       name: product.product_name,
-      description: product.description, // Assuming 'description' is a property of product
-      quantity: 1, // Default quantity
+      description: product.description,
+      quantity: 1,
       selling_price: product.selling_price,
     };
-    navigate('/invoice-generator', { state: { receiptData: productData } });
-  }
+    navigate("/invoice-generator", { state: { receiptData: productData } });
+  };
+
+  const handleSearch = (event) => {
+    const searchValue = event.target.value.toLowerCase();
+    setSearchText(searchValue);
+
+    const filtered = products.filter((product) => {
+      return (
+        (product.product_name?.toLowerCase().includes(searchValue) || "") ||
+        (product.sku?.toLowerCase().includes(searchValue) || "") ||
+        (product.location?.toLowerCase().includes(searchValue) || "") ||
+        (product.categories?.toLowerCase().includes(searchValue) || "")
+      );
+    });
+
+    setFilteredProducts(filtered);
+  };
+
+  const handleExportToPDF = () => {
+    const doc = new jsPDF();
+    // Add a heading
+  const title = "IT Planet Product Available List";
+  doc.setFontSize(18); // Set font size for the title
+  doc.text(title, 105, 15, { align: "center" }); // Centered title at the top
+    const tableData = filteredProducts.map((product) => [
+      product.product_name,
+      product.description,
+      product.location,
+      product.categories,
+      product.brand,
+      product.selling_price,
+      product.quantity,
+    ]);
+  
+    doc.autoTable({
+      head: [["Product Name", "description", "Location", "Category", "Brand", "Price", "Quantity"]],
+      body: tableData,
+      startY: 30,
+    });
+  
+    doc.save("products.pdf");
+  };
+  const handleExportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredProducts);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+    XLSX.writeFile(workbook, "products.xlsx");
+  };
+
+  const columns = [
+    { name: "Product Name", selector: (row) => row.product_name, sortable: true },
+    { name: "SKU", selector: (row) => row.sku, sortable: true },
+    { name: "Location", selector: (row) => row.location, sortable: true },
+    { name: "Category", selector: (row) => row.categories, sortable: true },
+    { name: "Brand", selector: (row) => row.brand, sortable: true },
+    { name: "Selling Price", selector: (row) => row.selling_price, sortable: true },
+    { name: "Quantity", selector: (row) => row.quantity, sortable: true },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div className="dropdown">
+           <i
+            className="bi bi-three-dots-vertical"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            style={{ cursor: "pointer" }}
+          ></i>
+          <ul className="dropdown-menu dropdown-menu-end" id="dropdown-menu">
+            <li>
+            <button className="dropdown-item" onClick={() => handleReceipt(row)}>
+            <i className="bi bi-receipt"></i> Sale
+          </button>
+            </li>
+          
+          <li>
+          <button className="dropdown-item" onClick={() => handleUpdate(row)}>
+            <i className="bi bi-pencil-fill"></i> Update
+          </button>
+          </li>
+          <li>
+          <button className="dropdown-item" onClick={() => handleDelete(row.id)}>
+            <i className="bi bi-trash-fill"></i> Delete
+          </button>
+          </li>
+          </ul>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="container mt-5">
       <div className="d-flex justify-content-between mb-2">
         <h4 className="fw-bold text-secondary">Product List</h4>
-        <button
-          className="btn btn-primary text-white"
-          onClick={() => navigate('/add-product')}
-        >
+        <button className="btn btn-primary text-white" onClick={() => navigate("/add-product")}>
           <i className="bi bi-plus"></i> Add New Product
         </button>
       </div>
 
       <div className="card shadow-sm">
         <div className="card-body">
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            {/* Search and Filter */}
-            <div className="search-bar d-flex align-items-center">
-              <button className="btn btn-primary">
-                <i className="bi bi-funnel"></i>
-              </button>
-              <input
-                type="text"
-                className="form-control ms-2"
-                placeholder="Search..."
-                style={{ width: "200px" }}
-              />
-            </div>
-            <div className="wordset">
-              <i className="bi bi-file-earmark-pdf-fill fs-3 text-danger"></i>
-              <i className="bi bi-file-earmark-spreadsheet fs-3 text-success"></i>
-              <i className="bi bi-printer fs-3"></i>
-            </div>
-          </div>
-
-          <form className="mb-3">
-            <div className="row">
-              <div className="col">
-                <div className="form-group">
-                  <input type="date" className="form-control" />
-                </div>
-              </div>
-              <div className="col">
-                <input type="text" className="form-control" placeholder="Enter Reference" />
-              </div>
-              <div className="col">
-                <select className="form-control">
-                  <option selected>Choose...</option>
-                  <option>...</option>
-                </select>
-              </div>
-              <div className="col">
-                <select className="form-control">
-                  <option selected>Choose...</option>
-                  <option>...</option>
-                </select>
-              </div>
-              <div className="col">
-                <select className="form-control">
-                  <option selected>Choose...</option>
-                  <option>...</option>
-                </select>
-              </div>
-              <div className="col-auto">
-                <button type="submit" className="btn btn-primary mb-2"><i className="bi bi-search"></i></button>
-              </div>
-            </div>
-          </form>
-
-          {/* Table */}
-          <div className="table-responsive">
-            <table className="table table-hover">
-              <thead className="table-light">
-                <tr>
-                  <th>
-                    <label className="checkboxs">
-                      <input type="checkbox" id="select-all" />
-                      <span className="checkmarks"></span>
-                    </label>
-                  </th>
-                  <th>Product Name</th>
-                  <th>SKU</th>
-                  <th>location</th>
-                  <th>Category</th>
-                  <th>Brand</th>
-                  <th>selling_price</th>
-                  <th>Unit</th>
-                  <th>Qty</th>
-                  <th>Created By</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product.id}>
-                    <td>
-                      <label className="checkboxs">
-                        <input type="checkbox" />
-                        <span className="checkmarks"></span>
-                      </label>
-                    </td>
-                    <td>
-                      
-                      {product.product_name}
-                    </td>
-                    <td>{product.sku}</td>
-                    <td>{product.location}</td>
-                    <td>{product.categories}</td>
-                    <td>{product.brand}</td>
-                    <td>{product.selling_price}</td>
-                    <td>{product.unit}</td>
-                    <td>{product.quantity}</td>
-                    <td>{product.createdBy}</td>
-                    <td>
-                    <button className="btn btn-link text-primary" onClick={() => handleReceipt(product)}>
-                    <i className="bi bi-receipt"></i>
-                      </button>
-                      <button className="btn btn-link text-primary" onClick={() => handleUpdate(product)}>
-                        <i className="bi bi-pencil-fill"></i>
-                      </button>
-                      <button className="btn btn-link text-danger" onClick={() => handleDelete(product.id)}>
-                        <i className="bi bi-trash-fill"></i>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="d-flex justify-content-between align-items-center mt-3">
+          <div className="d-flex justify-content-between mb-3">
+            <input
+              type="text"
+              placeholder="Search..."
+              className="form-control w-25"
+              value={searchText}
+              onChange={handleSearch}
+            />
             <div>
-              <label>Show per page:</label>
-              <select className="form-select form-select-sm d-inline-block w-auto ms-2">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-              </select>
+              <button className="btn btn-success mx-2" onClick={handleExportToExcel}>
+                Export to Excel
+              </button>
+              <button className="btn btn-danger" onClick={handleExportToPDF}>
+                Export to PDF
+              </button>
             </div>
-            <nav>
-              <ul className="pagination pagination-sm mb-0">
-                <li className="page-item disabled">
-                  <button className="page-link">Previous</button>
-                </li>
-                <li className="page-item active">
-                  <button className="page-link">1</button>
-                </li>
-                <li className="page-item">
-                  <button className="page-link">2</button>
-                </li>
-                <li className="page-item">
-                  <button className="page-link">3</button>
-                </li>
-                <li className="page-item">
-                  <button className="page-link">Next</button>
-                </li>
-              </ul>
-            </nav>
           </div>
+          <DataTable className="dataTable-container"
+            columns={columns}
+            data={filteredProducts}
+            pagination
+            selectableRows
+            highlightOnHover
+            persistTableHead
+            customStyles={{
+              rows: {
+                style: {
+                  fontSize: "16px", // Increase text size
+                },
+              },
+            }}
+          />
         </div>
       </div>
     </div>

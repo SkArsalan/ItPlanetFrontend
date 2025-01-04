@@ -1,0 +1,13 @@
+.dataTable-container {
+    overflow: visible !important;
+  }
+  
+  #dropdown-menu {
+    z-index: 550 !important; /* Ensure it appears above other elements */
+   position: absolute !important;
+  }
+  
+  .bi-three-dots-vertical {
+    cursor: pointer;
+  }
+  

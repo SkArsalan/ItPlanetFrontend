@@ -53,7 +53,7 @@ const AddProduct = () => {
       Swal.fire({
         icon: "error",
         title: "Authentication Required",
-        text: "User is not authenticated. Please log in first.",
+        text: "User is not authenticated. Please login first.",
       });
       return;
     }

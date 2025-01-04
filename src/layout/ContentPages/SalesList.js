@@ -1,181 +1,238 @@
-import React from "react";
-import "bootstrap-icons/font/bootstrap-icons.css";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import * as XLSX from "xlsx";
+import DataTable from "react-data-table-component";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import { useAuth } from "../../hooks/context/AuthContext";
+import API from "../../api/axios";
+import "./TableContents/DropDown.css"
 const SalesList = () => {
-  const navigate = useNavigate()
-  return (
-    <div className=" container mt-5 page-wrapper">
-      <div className="content">
-        {/* Page Header */}
-        <div className="page-header">
-          <div className="page-title">
-          <div className="d-flex justify-content-between mb-2"> <h4 className="fw-bold text-secondary">Sales LIST</h4>
-      
-      {/* Add New Puchase */}
-      <button 
-      className="btn btn-primary text-white"
-      onClick={() => navigate('/invoice-generator')}
-      >
-              <i className="bi bi-plus"></i> Add New Sales
-            </button></div> 
-            
-          </div>
-        </div>
+  const navigate = useNavigate();
+  const [searchText, setSearchText] = useState("");
+  const [salesData, setSalesData] = useState([]);
+  const [filteredSales, setFilteredSales] = useState([]);
+  const [loading, setLoading] = useState(false); // Loading state
+  const [error, setError] = useState(""); // Error message state
+  const { user, isAuthenticated } = useAuth();
 
-        {/* Card Section */}
-        <div className="card">
-          <div className="card-body">
-            {/* Filter and Search Section */}
-            <div className="table-top">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-            {/* Search and Filter */}
-            <div className="search-bar d-flex align-items-center">
-              <button className="btn btn-primary">
-              <i className="bi bi-funnel"></i>
-              </button>
-              <input
-                type="text"
-                className="form-control ms-2"
-                placeholder="Search..."
-                style={{ width: "200px" }}
-              />
-            </div>
-            <div className="wordset">
-                
-            <i className="bi bi-file-earmark-pdf-fill fs-3 text-danger"></i>
-            <i className="bi bi-file-earmark-spreadsheet fs-3 text-success"></i>
-            <i className="bi bi-printer fs-3"></i>
-              </div>
-          </div>
-              
-            </div>
+  const fetchSalesData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await API.get(`/invoice-details`);
+      setSalesData(response.data.invoice);
+      setFilteredSales(response.data.invoice);
+    } catch (error) {
+      setError(error.response?.data?.message || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-<form className="mb-3">
-  <div className="row">
-    <div className="col">
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchSalesData();
+    } else {
+      navigate("/login");
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Handle search functionality
+  const handleSearch = (e) => {
+    const value = e.target.value.toLowerCase();
+    setSearchText(value);
+    const filtered = salesData.filter((item) =>
+      Object.values(item).some((field) =>
+        field?.toString().toLowerCase().includes(value)
+      )
+    );
+    setFilteredSales(filtered);
+  };
+
+  // Export to PDF
+  const handleExportToPDF = () => {
+    const doc = new jsPDF();
+    const tableColumn = ["Customer", "Date", "Invoice", "Payment Status", "Total", "Paid", "Due", "Created By"];
+    const tableRows = filteredSales.map((item) => [
+      item.client_name,
+      item.invoice_date,
+      item.invoice_number,
+      item.payment_status,
+      item.total,
+      item.paid,
+      item.due,
+      item.created_by,
+    ]);
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+    });
+    doc.save("sales-list.pdf");
+  };
+
+  // Export to Excel
+  const handleExportToExcel = () => {
+
+    const columnOrder = [
+      'invoice_number',
+      'client_name',
+      'invoice_date',
+    'mobile_number',
+    'total',
+    'paid',
+    'due',
+    'payment_status',
+    'location',
+    ];
+    // Rearrange the filteredSales data based on the desired column order
+  const rearrangedData = filteredSales.map(item => {
+    // Create a new object with the properties in the desired order
+    const rearrangedItem = {};
+    columnOrder.forEach(column => {
+      rearrangedItem[column] = item[column];
+    });
+    return rearrangedItem;
+  });
+    const worksheet = XLSX.utils.json_to_sheet(rearrangedData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales List");
+    XLSX.writeFile(workbook, "sales-list.xlsx");
+  };
+
+  // Define table columns
+  const columns = [
+    { name: "Customer", selector: (row) => row.client_name, sortable: true,width: "200px" },
+    {
+      name: "Date",
+      selector: (row) =>
+        new Intl.DateTimeFormat("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }).format(new Date(row.invoice_date)),
+      sortable: true,
+      width: "120px"
+    },    
+    {
+      name: "Invoice",
+      selector: (row) => row.invoice_number,
+      width: "200px",
+    },
     
-                <div className="form-group">
-                  
-                  <input
-                    type="date"
-                    // value={purchaseDate}
-                    // onChange={(e) => setPurchaseDate(e.target.value)}
-                    className="form-control"
-                    
-                  />
-                </div>
-              
-    </div>
-    <div className="col">
-      <input type="text" className="form-control" placeholder="Enter Reference"/>
-    </div>
-    <div className="col">
-      <select className="form-control">
-        <option selected>Choose...</option>
-        <option>...</option>
-      </select>
-    </div>
-    <div className="col">
-      <select className="form-control">
-        <option selected>Choose...</option>
-        <option>...</option>
-      </select>
-    </div>
-    <div className="col">
-      <select className="form-control">
-        <option value="">Choose...</option>
-        <option>...</option>
-      </select>
-    </div>
-    <div className="col-auto">
-      <button type="submit" className="btn btn-primary mb-2"><i className="bi bi-search"></i></button>
-    </div>
-  </div>
-</form>
+    { name: "Payment Status",
+      selector: (row) => row.payment_status,
+      cell: (row) => {
+        const paymentStatus = row.payment_status;
 
-            {/* Table */}
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead className="table-light">
-                  <tr>
-                    <th>
-                      <label className="checkboxs">
-                        <input type="checkbox" id="select-all" />
-                        <span className="checkmarks"></span>
-                      </label>
-                    </th>
-                    {["Customer", "Date", "Invoice", "Status","Payment", "Total", "Paid", "Due", "Created By", "Actions"].map(
-                      (heading, index) => (
-                        <th key={index}>{heading}</th>
-                      )
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Replace the below rows with dynamic data */}
-                  {[...Array(10)].map((_, index) => (
-                    <tr key={index}>
-                      <td>
-                        <label className="checkboxs">
-                          <input type="checkbox" />
-                          <span className="checkmarks"></span>
-                        </label>
-                      </td>
-                      <td className="text-bolds">Name {index + 1}</td>
-                      <td>19 Nov 2022</td>
-                      <td>PT00{index + 1}</td>
-                      <td>
-                        <span className="badges bg-lightgreen">Pending</span>
-                      </td>
-                      <td><span className="badges bg-lightgreen">Due</span></td>
-                      <td>250</td>
-                      <td>250</td>
-                      <td>0</td>
-                      <td>Admin</td>
-                      <td>
-        <div className="dropdown ms-auto">
-          {/* Dropdown toggle button */}
-          <i 
-            className="fas fa-ellipsis-vertical dropdown-toggle" 
-            data-bs-toggle="dropdown" 
+        let color = 'black';
+        if(paymentStatus === 'Paid') color = 'green';
+        else if (paymentStatus === 'Pending') color = 'red';
+
+        return <span style={{color}}>{paymentStatus}</span>
+      },
+      sortable: true,
+      },
+    { name: "Total", selector: (row) => row.total },
+    { name: "Paid", selector: (row) => row.paid },
+    { name: "Due", selector: (row) => row.due },
+    { name: "Created By", selector: (row) => row.created_by },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div className="dropdown" style={{ position: "relative" }}>
+          <i
+            className="bi bi-three-dots-vertical"
+            data-bs-toggle="dropdown"
             aria-expanded="false"
-            style={{ cursor: 'pointer' }} // Make the cursor a pointer
+            style={{ cursor: "pointer" }}
           ></i>
-
-          {/* Dropdown menu */}
-          <ul className="dropdown-menu">
-          <li>
-            <span className="dropdown-item">
-              <i className="bi bi-eye-fill mx-2"></i> View
+          <ul className="dropdown-menu dropdown-menu-end" id="dropdown-menu">
+            <li>
+              <span className="dropdown-item">
+                <i className="bi bi-eye-fill mx-2"></i> View
               </span>
             </li>
             <li>
               <span className="dropdown-item">
-              <i className="bi bi-pencil-fill mx-2"></i> Update
+                <i className="bi bi-pencil-fill mx-2"></i> Update
               </span>
             </li>
             <li>
-            <span className="dropdown-item">
-              <i className="bi bi-download mx-2"></i> Download PDF
+              <span className="dropdown-item">
+                <i className="bi bi-download mx-2"></i> Download PDF
               </span>
             </li>
             <li>
-            <span className="dropdown-item">
-              <i className="bi bi-trash-fill mx-2"></i> Delete
+              <span className="dropdown-item">
+                <i className="bi bi-trash-fill mx-2"></i> Delete
               </span>
             </li>
-            
           </ul>
         </div>
-      </td>
+      ),
+    },
+  ];
 
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+  return (
+    <div className="container mt-5">
+      <div className="d-flex justify-content-between mb-2">
+        <h4 className="fw-bold text-secondary">Sales List</h4>
+        <button
+          className="btn btn-primary text-white"
+          onClick={() => navigate("/invoice-generator")}
+        >
+          <i className="bi bi-plus"></i> Add New Sales
+        </button>
+      </div>
+
+      <div className="card shadow-sm">
+        <div className="card-body">
+          {loading ? (
+            <div>Loading...</div>
+          ) : error ? (
+            <div className="text-danger">{error}</div>
+          ) : (
+            <>
+              <div className="d-flex justify-content-between mb-3">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="form-control w-25"
+                  value={searchText}
+                  onChange={handleSearch}
+                />
+                <div>
+                  <button
+                    className="btn btn-success mx-2"
+                    onClick={handleExportToExcel}
+                  >
+                    Export to Excel
+                  </button>
+                  <button className="btn btn-danger" onClick={handleExportToPDF}>
+                    Export to PDF
+                  </button>
+                </div>
+              </div>
+              <DataTable className="dataTable-container"
+                columns={columns}
+                data={filteredSales}
+                pagination
+                selectableRows
+                highlightOnHover
+                persistTableHead
+                customStyles={{
+                  rows: {
+                    style: {
+                      fontSize: "16px",
+                    },
+                  },
+                }}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>

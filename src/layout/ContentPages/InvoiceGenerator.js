@@ -16,7 +16,7 @@ const InvoiceGenerator = () => {
   const {user} = useAuth()
  
   const initialInvoice = {
-    clientName: "",
+    customer_name: "",
     invoiceDate: "",
     invoiceNumber: "",
     MobileNumber: "",
@@ -24,6 +24,7 @@ const InvoiceGenerator = () => {
     total: 0,
     paid: 0, // Highlighted Addition
     createdBy: user.username || "Admin",
+    location: user.location
     
   }
   const [invoice, setInvoice] = useState(initialInvoice);
@@ -53,42 +54,11 @@ const InvoiceGenerator = () => {
   }, []);
 
 
-  // useEffect(() => {
-  //   // Only run this effect if location.state.receiptData exists and item isn't already in invoice
-  //   if (location.state && location.state.receiptData) {
-  //     const receiptItem = location.state.receiptData;
-  //     const newItem = {
-  //       item_name: receiptItem.name,
-  //       description: receiptItem.description,
-  //       qty: receiptItem.quantity,
-  //       selling_price: receiptItem.selling_price,
-  //       subtotal: receiptItem.quantity * receiptItem.selling_price,
-  //     };
-      
-
-  //     // Check if the item already exists in the invoice to avoid duplicates
-  //     setInvoice((prev) => {
-  //       const itemExists = prev.items.some(item => item.item_name === newItem.item_name);
-
-  //       if (itemExists) {
-  //         return prev; // Do nothing if the item already exists
-  //       }
-
-  //       return {
-  //         ...prev,
-  //         items: [...prev.items, newItem],
-  //         total: prev.total + newItem.subtotal,
-  //       };
-  //     });
-  //   }
-  // }, [location.state]); 
-
-
 useEffect(() => {
   const fetchItemDetails = async () => {
     try {
       if (location.state && location.state.receiptData) {
-        const receiptId = location.state.receiptData.id; // Assuming `receiptData` includes an ID
+        const receiptId = location.state.receiptData.id; // Assuming receiptData includes an ID
         const response = await API.get(`/item/${receiptId}`);
         
         const receiptItem = response.data; // Adjust based on API response structure
@@ -129,23 +99,46 @@ useEffect(() => {
 }, [location.state]);
 
 
+const [inventory, setInventory] = useState([]); // To store inventory items
+const [filteredItems, setFilteredItems] = useState([]); // Filtered items for autocomplete
+// fetch Inventory from APi
+
+useEffect(() => {
+  const fetchInventory = async() => {
+    try{
+      const response = await API.get(`/list/${user.location}`);
+      setInventory(response.data.inventory)
+    } catch(error){
+      console.log("Error fetching inventory:", error);
+    }
+  }
+  fetchInventory();
+}, [user.location]);
+
+
   // Add or Update Item
   const saveItem = () => {
-    if (item.item_name && item.description && item.qty > 0 && item.price > 0) {
-      const newItem = { ...item, subtotal: item.qty * item.price };
+    if (item.item_name && item.description && item.qty > 0 && item.selling_price > 0) {
+      const newItem = { ...item, subtotal: item.qty * item.selling_price };
   
       if (editIndex !== null) {
-        const updatedItems = [...invoice.items];
+        const updatedItems = [...invoice.items];  // Make a copy of the current items
         const oldSubtotal = updatedItems[editIndex].subtotal;
+  
+        // Update the item at the specific edit index
         updatedItems[editIndex] = newItem;
   
+        // Update the total price by subtracting the old subtotal and adding the new one
         setInvoice((prev) => ({
           ...prev,
           items: updatedItems,
           total: prev.total - oldSubtotal + newItem.subtotal,
         }));
+  
+        // Reset editIndex after the update
         setEditIndex(null);
       } else {
+        // If not in edit mode, add a new item
         setInvoice((prev) => ({
           ...prev,
           items: [...prev.items, newItem],
@@ -153,10 +146,11 @@ useEffect(() => {
         }));
       }
   
-      // Reset the item form to initial state
+      // Reset the item form to initial state after adding/updating
       setItem(initialItem);
     }
   };
+  
 
   const editItem = (index) => {
     setItem(invoice.items[index]);
@@ -181,7 +175,29 @@ useEffect(() => {
   const handleItemChange = (e) => {
     const { name, value } = e.target;
     setItem((prev) => ({ ...prev, [name]: value }));
+
+    // Filter items based on user input
+    if(value.trim() !== ""){
+      const matches = inventory.filter((product) =>
+      product.product_name.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredItems(matches);
+    }else{
+      setFilteredItems([]);
+    }
   };
+
+  // Handle item selection
+  const handleSelectItem = (selectedItem) => {
+    setItem({
+      item_id: selectedItem.id,
+      item_name: selectedItem.product_name,
+      description: selectedItem.description,
+      selling_price: selectedItem.selling_price,
+      qty: 1, // Default quantity
+    });
+    setFilteredItems([]); // Clear suggestions
+  }
 
   
   const handleClearLocation = () => {
@@ -195,7 +211,7 @@ useEffect(() => {
     try{
 
       // Validation: Check if required fields are filled
-    if (!invoice.clientName || !invoice.MobileNumber || !invoice.paid) {
+    if (!invoice.customer_name || !invoice.MobileNumber || !invoice.paid) {
       alert('Please fill all required fields before exporting!');
       return; // Stop execution if validation fails
     }
@@ -224,7 +240,7 @@ useEffect(() => {
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
     pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`${invoice.clientName}_invoice.pdf`);
+    pdf.save(`${invoice.customer_name}_invoice.pdf`);
       // Show SweetAlert2 success popup
       MySwal.fire({
         icon: "success",
@@ -241,29 +257,6 @@ useEffect(() => {
       }); // Highlighted: Error alert if the API request fails
     }
 
-  //  // Subtract Item Quantities from the Database
-  //  const updateStockRequests = invoice.items.map(item => {
-  //   const payload = {
-  //     itemName: item.item_name, // Ensure this matches the Flask backend field
-  //     quantitySold: parseInt(item.qty, 10), // Ensure qty is an integer
-  //   };
-
-  //   console.log("Payload for stock update:", payload); // Debugging log
-
-  //   // Send PUT request to update stock
-  //   return API.put('/update-stock', payload)
-  //     .then(response => {
-  //       console.log(`Stock updated for ${payload.itemName}:`, response.data);
-  //     })
-  //     .catch(error => {
-  //       console.error(`Error updating stock for ${payload.itemName}:`, error.response?.data || error.message);
-  //       throw new Error(`Failed to update stock for ${payload.itemName}`);
-  //     });
-  // });
-
-  // // Wait for all stock update requests to complete
-  // await Promise.all(updateStockRequests);
-    // Restore buttons after export
     buttons.forEach(button => button.style.display = '');
     
     // Reset invoice state and clear the table
@@ -294,8 +287,8 @@ useEffect(() => {
             <input
               type="text"
               className="form-control"
-              name="clientName"
-              value={invoice.clientName}
+              name="customer_name"
+              value={invoice.customer_name}
               onChange={handleInputChange}
               required
             />
@@ -381,6 +374,26 @@ useEffect(() => {
           value={item.item_name}
           onChange={handleItemChange}
         />
+    {/* Autocomplete dropdown */}
+    {filteredItems.length > 0 && (
+          <ul className="dropdown-menu show" style={{ position: "absolute", zIndex: 1000 }}>
+            {filteredItems.map((product) => (
+              <li
+                key={product.id}
+                className="dropdown-item"
+                onClick={() => handleSelectItem(product)}
+                style={{ cursor: "pointer" }}
+              >
+                <strong>{product.product_name}</strong>
+                <br />
+                <small>
+                  {product.description} | {product.categories} | ₹{product.selling_price}
+                </small>
+              </li>
+            ))}
+          </ul>
+        )}
+
       </div>
       <div className="mb-3">
         <label className="form-label">Description</label>
@@ -390,6 +403,7 @@ useEffect(() => {
           name="description"
           value={item.description}
           onChange={handleItemChange}
+          
         />
       </div>
       <div className="row mb-3">
@@ -411,6 +425,7 @@ useEffect(() => {
             name="selling_price"
             value={item.selling_price}
             onChange={handleItemChange}
+            
           />
         </div>
         
@@ -439,7 +454,7 @@ useEffect(() => {
         </div>
         <div className="container  mb-3">
   <div className="row row-cols-2 g-3">
-    <div className="col"><strong>Client:</strong> {invoice.clientName}</div>
+    <div className="col"><strong>Client:</strong> {invoice.customer_name}</div>
     <div className="col"><strong>Date:</strong> {invoice.invoiceDate}</div>
     <div className="col"><strong>Mobile Number:</strong> {invoice.MobileNumber}</div>
     <div className="col"><strong>Invoice Number:</strong> {invoice.invoiceNumber}</div>
