@@ -30,16 +30,19 @@ function Login() {
     });
 
     const result = await login({email, password, location});
-    if (result.success){
-       // Show success popup after login is successful
-       MySwal.fire({
+    if (result.success) {
+      const { user } = result.message;
+      
+      // Show success popup after login is successful
+      MySwal.fire({
         icon: 'success',
         title: <p>Login Successful</p>,
-        html: <p>Welcome to IT Planet, {result.username || 'User'}!</p>,
+        html: <p>Welcome to IT Planet, {user.username || 'User'}!</p>,
         timer: 2000,
         showConfirmButton: false,
       });
-      navigate('/');
+    
+      navigate(`/${user.location}`);
     } else{
        // Show error popup if login fails
        MySwal.fire({

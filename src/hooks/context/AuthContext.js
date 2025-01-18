@@ -45,7 +45,7 @@ function AuthProvider({ children }) {
       const user = response.data.user
       // dispatch({type: 'LOGIN', payload: response.data.user});
       dispatch({type: 'LOGIN', payload: user});
-      return {success: true, message: response.data.message};
+      return {success: true, message: response.data};
     } catch (error) {
       return {success: false, message: error.response?.data?.message || 'Login Failed'}
     }

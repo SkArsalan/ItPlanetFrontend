@@ -21,7 +21,7 @@ const SalesList = () => {
     try {
       setLoading(true);
       setError("");
-      const response = await API.get(`/invoice-details`);
+      const response = await API.get(`/invoice-list`);
       setSalesData(response.data.invoice);
       setFilteredSales(response.data.invoice);
     } catch (error) {
@@ -50,6 +50,12 @@ const SalesList = () => {
     );
     setFilteredSales(filtered);
   };
+
+  const handleView = (invoiceId) => {
+    const url = `/${user.location}/pdf-generator?id=${invoiceId}&type=invoice`;
+    window.open(url, "_blank")
+  }
+
 
   // Export to PDF
   const handleExportToPDF = () => {
@@ -151,9 +157,9 @@ const SalesList = () => {
           ></i>
           <ul className="dropdown-menu dropdown-menu-end" id="dropdown-menu">
             <li>
-              <span className="dropdown-item">
-                <i className="bi bi-eye-fill mx-2"></i> View
-              </span>
+            <button className="dropdown-item" onClick={() => handleView(row.id)}>
+                    <i className="bi bi-eye-fill mx-2"></i> View
+                  </button>
             </li>
             <li>
               <span className="dropdown-item">
@@ -182,7 +188,7 @@ const SalesList = () => {
         <h4 className="fw-bold text-secondary">Sales List</h4>
         <button
           className="btn btn-primary text-white"
-          onClick={() => navigate("/invoice-generator")}
+          onClick={() => navigate(`/${user.location}/invoice-generator`)}
         >
           <i className="bi bi-plus"></i> Add New Sales
         </button>

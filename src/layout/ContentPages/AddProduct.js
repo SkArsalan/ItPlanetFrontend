@@ -8,12 +8,14 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import "sweetalert2/dist/sweetalert2.min.css";
+import { useSection } from "../../hooks/context/SectionProvider";
 
 
 const AddProduct = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const {selectedSection} = useSection()
 
   const productToEdit = location.state?.product || null;
   const initialData = {
@@ -23,7 +25,7 @@ const AddProduct = () => {
     status: "Not Ready",
     purchase_price: "",
     selling_price: "",
-    categories: "",
+    categories: selectedSection,
     location: user.location,
     date: new Date().toLocaleDateString("en-GB")
     .split("/")
@@ -87,7 +89,7 @@ const AddProduct = () => {
       text: response.data.message || "Product saved successfully",
     });
 
-      productToEdit ? navigate("/product-list") : setFormData(initialData); // Reset form
+      productToEdit ? navigate(`/${user.location}/${selectedSection}/product-list`) : setFormData(initialData); // Reset form
     } catch (error) {
       console.error("Error adding product:", error);
       const errorMessage = error.response?.data?.message || "An error occurred while adding the product";
@@ -150,18 +152,17 @@ const AddProduct = () => {
                 <div className="col-lg-3 col-sm-6 col-12">
                   <div className="form-group">
                     <label>Category</label>
-                    <select
+                    <input
+                    type="text"
                       name="categories"
-                      className="form-select"
-                      value={formData.categories}
-                      onChange={handleChange}
+                      className="form-control"
+                      value={formData.categories} // Bind location value to formData
+                      onChange={handleChange} // Update formData when input changes
                       required
+                      disabled
                     >
-                      <option value="">Choose Category</option>
-                      <option value="Laptop">Laptop</option>
-                      <option value="Accessories">Accessories</option>
-                      <option value="CCTV">CCTV</option>
-                    </select>
+                      
+                    </input>
                   </div>
                 </div>
 

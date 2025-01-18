@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PdfGenerator from "../../pdf/PdfGenerator"
 import { useAuth } from "../../hooks/context/AuthContext";
 
@@ -7,11 +7,13 @@ import withReactContent from "sweetalert2-react-content";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../../api/axios";
+import { useSection } from "../../hooks/context/SectionProvider";
 
 const AddQuotation = () => {
   const {user, isAuthenticated} = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const {selectedSection} = useSection()
 
   const quotationToEdit = location.state?.invoice || null; 
   const initialFormData = {
@@ -22,7 +24,7 @@ const AddQuotation = () => {
     .split("/")
     .reverse()
     .join("-"),
-    categories: "",
+    categories: selectedSection,
     products: [],
     totalPrice: 0,
     location: user.location,
@@ -41,6 +43,34 @@ const AddQuotation = () => {
   const [newProduct, setNewProduct] = useState(initialProductData);
   const [editIndex, setEditIndex] = useState(null);
 
+  // AutoComplete
+  const [inventory, setInventory] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
+
+  useEffect(() => {
+    const fetchInventory = async() => {
+      try{
+        const response = await API.get(`/list/${user.location}`);
+        setInventory(response.data.inventory)
+      } catch(error){
+        console.log("Error fetching inventory:", error)
+      }
+    }
+    fetchInventory();
+  }, [user.location]);
+
+  const handleSelectItem = (selectedItem) => {
+    setNewProduct({
+      name: selectedItem.product_name, // Populate the product name
+      description: selectedItem.description || "", // Description
+      price: selectedItem.selling_price || "", // Selling price
+      qty: 1, // Default quantity
+      sub_total: selectedItem.selling_price || "", // Sub-total (optional)
+    });
+    setFilteredItems([]); // Clear suggestions after selection
+  };
+  
+
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -48,7 +78,17 @@ const AddQuotation = () => {
 
   const handleProductChange = (e) => {
     const { name, value } = e.target;
-    setNewProduct({ ...newProduct, [name]: value });
+    setNewProduct((prev) => ({ ...prev, [name]: value }));
+
+    // Filter items based on user input
+    if(value.trim() !== ""){
+      const matches = inventory.filter((product) =>
+      product.product_name.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredItems(matches);
+    }else{
+      setFilteredItems([]);
+    }
   };
 
   const validateProduct = (product) => {
@@ -225,18 +265,16 @@ const AddQuotation = () => {
               <div className="col-lg-4 col-sm-6 col-12">
                   <div className="form-group">
                     <label>Category</label>
-                    <select
+                    <input
+                    type="text"
                       name="categories"
-                      className="form-select"
+                      className="form-control"
                       value={formData.categories}
                       onChange={handleFormChange}
                       required
+                      disabled
                     >
-                      <option value="">Choose Category</option>
-                      <option value="Laptop">Laptop</option>
-                      <option value="Accessories">Accessories</option>
-                      <option value="CCTV">CCTV</option>
-                    </select>
+                    </input>
                   </div>
                 </div>
                 <div className="col-lg-4 col-sm-6 col-12">
@@ -281,6 +319,27 @@ const AddQuotation = () => {
                       placeholder="Enter Product Name"
                       required
                     />
+                    {/* AutoComplete dropdown */}
+                    {filteredItems.length > 0 && (
+  <ul className="dropdown-menu show" style={{ position: "absolute", zIndex: 1000 }}>
+    {filteredItems.map((product) => (
+      <li
+        key={product.id}
+        className="dropdown-item"
+        onClick={() => handleSelectItem(product)}
+        style={{ cursor: "pointer" }}
+      >
+        <strong>{product.product_name}</strong>
+        <br />
+        <small>
+          {product.description} | {product.categories} | ₹{product.selling_price}
+        </small>
+      </li>
+    ))}
+  </ul>
+)}
+
+
                   </div>
                 </div>
                 <div className="col-lg-9 col-sm-6 col-12">
@@ -416,7 +475,7 @@ const AddQuotation = () => {
 
             <button className="btn btn-cancel">Cancel</button>
           </div>
-          <PdfGenerator externalData={formData} heading="Quotation"/>
+          {/* <PdfGenerator externalData={formData} heading="Quotation"/> */}
         </div>
       </div>
     </div>

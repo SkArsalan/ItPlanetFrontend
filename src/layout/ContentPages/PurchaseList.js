@@ -1,10 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router";
 import Searchbar from "./TableContents/Searchbar";
+import { useSection } from "../../hooks/context/SectionProvider";
+import { useAuth } from "../../hooks/context/AuthContext";
 // import "./PurchaseList.css"; // Import your CSS for styling
 
 const PurchaseList = () => {
   const navigate = useNavigate()
+  const {selectedSection} = useSection();
+  const {user} = useAuth();
   return (
     <div className=" container mt-5 page-wrapper">
       <div className="content">
@@ -16,7 +20,7 @@ const PurchaseList = () => {
       {/* Add New Puchase */}
       <button 
       className="btn btn-primary text-white"
-      onClick={() => navigate('/add-purchase')}
+      onClick={() => navigate(`/${user.location}/${selectedSection}/add-purchase`)}
       >
               <i className="bi bi-plus"></i> Add New Purchase
             </button></div> 

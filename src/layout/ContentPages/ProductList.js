@@ -1,6 +1,6 @@
 
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import DataTable from "react-data-table-component";
 import { jsPDF } from "jspdf";
@@ -9,36 +9,40 @@ import * as XLSX from "xlsx";
 import API from "../../api/axios";
 import { useAuth } from "../../hooks/context/AuthContext";
 import "./TableContents/DropDown.css"
+import { useSection } from "../../hooks/context/SectionProvider";
 
 const ProductList = () => {
   const navigate = useNavigate();
+  const {selectedSection} = useSection();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchText, setSearchText] = useState("");
   const { user, isAuthenticated } = useAuth();
 
-  const fetchProducts = async () => {
+  // Memoized fetchProducts function
+  const fetchProducts = useCallback(async () => {
     try {
       if (!user?.location) {
         console.error("User location is not set");
         return;
       }
 
-      const response = await API.get(`/list/${user.location}`);
+      const response = await API.get(`/list/${user.location}/${selectedSection}`);
       setProducts(response.data.inventory);
       setFilteredProducts(response.data.inventory);
     } catch (error) {
       console.error("Error fetching products", error);
     }
-  };
+  }, [user?.location, selectedSection]);
 
+  // Fetch products on component mount and when dependencies change
   useEffect(() => {
     if (isAuthenticated) {
       fetchProducts();
     } else {
       navigate("/login");
     }
-  }, [isAuthenticated, user?.location]);
+  }, [isAuthenticated, fetchProducts, navigate]);
 
   const handleDelete = async (productId) => {
     try {
@@ -52,7 +56,7 @@ const ProductList = () => {
   };
 
   const handleUpdate = (product) => {
-    navigate("/add-product", { state: { product } });
+    navigate(`/${user.location}/${selectedSection}/add-product`, { state: { product } });
   };
 
   const handleReceipt = (product) => {
@@ -63,7 +67,7 @@ const ProductList = () => {
       quantity: 1,
       selling_price: product.selling_price,
     };
-    navigate("/invoice-generator", { state: { receiptData: productData } });
+    navigate(`/${user.location}/invoice-generator`, { state: { receiptData: productData } });
   };
 
   const handleSearch = (event) => {
@@ -158,7 +162,7 @@ const ProductList = () => {
     <div className="container mt-5">
       <div className="d-flex justify-content-between mb-2">
         <h4 className="fw-bold text-secondary">Product List</h4>
-        <button className="btn btn-primary text-white" onClick={() => navigate("/add-product")}>
+        <button className="btn btn-primary text-white" onClick={() => navigate(`/${user.location}/${selectedSection}/add-product`)}>
           <i className="bi bi-plus"></i> Add New Product
         </button>
       </div>

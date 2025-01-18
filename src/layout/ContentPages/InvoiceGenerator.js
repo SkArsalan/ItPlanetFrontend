@@ -446,7 +446,8 @@ useEffect(() => {
           <br /> <b>Mobile:</b> 7385154843, {user.location === "Nanded" ? "8421145259" : "7774837006"} 
           <br /> <b>Email:</b> itplanet4843@gmail.com</p>
         </div>
-          <img src="logo999.jpeg" alt="Company Logo" style={{ height: "120px" }} />
+        <img src="/logo999.jpeg" alt="Company Logo" style={{ height: "120px" }} />
+
         </div>
         <hr />
         <div className="d-flex justify-content-center align-items-center">

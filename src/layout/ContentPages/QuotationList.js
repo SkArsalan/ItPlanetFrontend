@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../hooks/context/AuthContext";
 import API from "../../api/axios";
@@ -8,22 +8,24 @@ import * as XLSX from "xlsx";
 import DataTable from "react-data-table-component";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./TableContents/DropDown.css"
+import { useSection } from "../../hooks/context/SectionProvider";
 // import "./PurchaseList.css"; // Import your CSS for styling
 
 const QuotationList = () => {
   const navigate = useNavigate()
   const [searchText, setSearchText] = useState("");
   const [quotations, setQuotations]=useState([]);
-  const [filteredQuotations, setFilteredQuotations] = useState([])
+  const [filteredQuotations, setFilteredQuotations] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("")
+  const [error, setError] = useState("");
+  const {selectedSection} = useSection();
   const {user, isAuthenticated} = useAuth();
 
-  const fetchQuotationList = async () => {
+  const fetchQuotationList = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
-      const response = await API.get(`/quotation-list/${user.location}`);
+      const response = await API.get(`/quotation-list/${user.location}/${selectedSection}`);
       setQuotations(response.data.quotation || []);
       setFilteredQuotations(response.data.quotation || []);
     } catch (err) {
@@ -31,7 +33,7 @@ const QuotationList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  },[user?.location, selectedSection])
   
 
   useEffect(() => {
@@ -40,7 +42,7 @@ const QuotationList = () => {
     }else{
       navigate("/login");
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate, fetchQuotationList])
 
   const handleSearch = (e) => {
     const value = e.target.value.toLowerCase(); // Corrected `toLowerCase`
@@ -54,6 +56,10 @@ const QuotationList = () => {
     setFilteredQuotations(filtered);
   };
   
+  const handleView = (quotationId) => {
+    const url = `/${user.location}/pdf-generator?id=${quotationId}&type=quotation`;
+    window.open(url, "_blank")
+  }
 
   // Export to PDF
     const handleExportToPDF = () => {
@@ -113,10 +119,10 @@ const QuotationList = () => {
                 style={{ cursor: "pointer" }}
               ></i>
               <ul className="dropdown-menu dropdown-menu-end" id="dropdown-menu">
-                <li>
-                  <span className="dropdown-item">
+                <li >
+                  <button className="dropdown-item" onClick={() => handleView(row.id)}>
                     <i className="bi bi-eye-fill mx-2"></i> View
-                  </span>
+                  </button>
                 </li>
                 <li>
                   <span className="dropdown-item">
@@ -146,7 +152,7 @@ const QuotationList = () => {
       <h4 className="fw-bold text-secondary">Quotation List</h4>
         <button
           className="btn btn-primary text-white"
-          onClick={() => navigate("/add-quotation")}
+          onClick={() => navigate(`/${user.location}/${selectedSection}/add-quotation`)}
         >
           <i className="bi bi-plus"></i> Add New Quotation
         </button>

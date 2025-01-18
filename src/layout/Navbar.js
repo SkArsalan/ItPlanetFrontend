@@ -1,21 +1,33 @@
-// src/components/Navbar.js
-import React, { useState } from 'react';
+import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
 import './Navbar.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSection } from '../hooks/context/SectionProvider';
 import { useAuth } from '../hooks/context/AuthContext';
+import API from '../api/axios';
+import { useQuery } from '@tanstack/react-query';
+
+const fetchPages = async () => {
+  const response = await API.get('/get-sections');
+  console.log('API Response:', response.data); // Debugging
+  return response.data.pages; // Extract the `pages` array
+};
 
 function Navbar({ toggleSidebar }) {
-  const {selectedSection, handleSelectSection} = useSection();
-  const { logout, user } = useAuth();
-    const navigate = useNavigate();
+  const { selectedSection, setSelectedSection } = useSection();
+  const { data: pages = [], isLoading, error } = useQuery({
+    queryKey: ['pages'],
+    queryFn: fetchPages,
+  });
 
-    const handleLogout = async () => {
-        await logout();
-        navigate('/login'); // Redirect after logout
-    };
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login'); // Redirect after logout
+  };
 
   return (
     <nav className="navbar navbar-expand-lg">
@@ -27,47 +39,38 @@ function Navbar({ toggleSidebar }) {
         <FontAwesomeIcon icon={faBars} /> {/* Sidebar toggle icon */}
       </button>
       <div className="navbar-title">IT Planet, {user.location}</div>
-       {/* Navbar Content */}
-       <div className="collapse navbar-collapse d-flex" id="navbarSupportedContent">
+      <div className="collapse navbar-collapse d-flex" id="navbarSupportedContent">
         {/* Left Dropdown Menu */}
         <ul className="navbar-nav ms-auto">
           <li className="nav-item dropdown">
-            <Link 
-              className="nav-link dropdown-toggle TextColor"  
-              role="button" 
-              data-bs-toggle="dropdown" 
+            <Link
+              className="nav-link dropdown-toggle TextColor"
+              role="button"
+              data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              {selectedSection} {/* Display the selected section */}
+              {selectedSection || 'Select'} Section
             </Link>
             <ul className="dropdown-menu dropdown-menu-end">
-              <li>
-                <Link
-                to="#"
-                  className="dropdown-item"  
-                  onClick={() => handleSelectSection('Accessories Section')}
+              {isLoading && <li>Loading...</li>}
+              {error && <li>Error: {error.message}</li>}
+              {pages.map((page) => (
+                <li
+                  key={page.id}
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: selectedSection === page.categories ? 'bold' : 'normal',
+                  }}
                 >
-                  Accessories Section
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  className="dropdown-item" 
-                  to="/product-list"
-                  onClick={() => handleSelectSection('Laptop Section')}
-                >
-                  Laptop Section
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  className="dropdown-item" 
-                  to="#"
-                  onClick={() => handleSelectSection('GST Section')}
-                >
-                  GST Section
-                </Link>
-              </li>
+                  <Link
+                    to="#"
+                    className="dropdown-item"
+                    onClick={() => setSelectedSection(page.categories)}
+                  >
+                    {page.categories} Section
+                  </Link>
+                </li>
+              ))}
             </ul>
           </li>
         </ul>
@@ -96,12 +99,10 @@ function Navbar({ toggleSidebar }) {
                 </Link>
               </li>
               <li><hr className="dropdown-divider" /></li>
-              <li><li>
-    <Link className="dropdown-item" onClick={handleLogout}>
-        <i className="fas fa-sign-out-alt me-2"></i> Log Out
-    </Link>
-</li>
-
+              <li>
+                <Link className="dropdown-item" onClick={handleLogout}>
+                  <i className="fas fa-sign-out-alt me-2"></i> Log Out
+                </Link>
               </li>
             </ul>
           </li>
