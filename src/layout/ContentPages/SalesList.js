@@ -8,6 +8,12 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import { useAuth } from "../../hooks/context/AuthContext";
 import API from "../../api/axios";
 import "./TableContents/DropDown.css"
+import DuePayements from "./PopupContents/DuePayements";
+
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import "sweetalert2/dist/sweetalert2.min.css";
+
 const SalesList = () => {
   const navigate = useNavigate();
   const [searchText, setSearchText] = useState("");
@@ -16,6 +22,8 @@ const SalesList = () => {
   const [loading, setLoading] = useState(false); // Loading state
   const [error, setError] = useState(""); // Error message state
   const { user, isAuthenticated } = useAuth();
+  const [showDueModal, setShowDueModal] = useState(false);
+  const [id, setId] = useState()
 
   const fetchSalesData = async () => {
     try {
@@ -55,6 +63,52 @@ const SalesList = () => {
     const url = `/${user.location}/pdf-generator?id=${invoiceId}&type=invoice`;
     window.open(url, "_blank")
   }
+
+  const handleDue = (id) => {
+    setId(id); // Set the current row to pass details into the modal if needed
+    setShowDueModal(true);
+  };
+
+  const handleCloseDueModal = () => {
+    setShowDueModal(false);
+    setId(null); // Clear the selected row after closing the modal
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      // Show the confirmation dialog
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You want to Delete the Invoice.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete",
+      });
+  
+      if (result.isConfirmed) {
+        // Call the delete API endpoint
+        const response = await API.delete(`/delete-invoice/${id}`);
+        console.log(response.data.message); // Optionally log the success message
+  
+        // Optionally, you can show a success notification
+        Swal.fire("Deleted!", "The invoice has been deleted.", "success");
+      }
+      // Remove the deleted item from the salesData and filteredSales arrays
+      const updatedSalesData = salesData.filter(item => item.id !== id);
+      setSalesData(updatedSalesData); // Update the salesData state
+  
+      // Optionally, if you want to keep the search filter active, update filteredSales
+      const updatedFilteredSales = filteredSales.filter(item => item.id !== id);
+      setFilteredSales(updatedFilteredSales); // Update the filteredSales state
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      // Optionally, show an error notification to the user
+      Swal.fire("Error!", "There was a problem deleting the invoice.", "error");
+    }
+  };
+
 
 
   // Export to PDF
@@ -162,19 +216,22 @@ const SalesList = () => {
                   </button>
             </li>
             <li>
+            <button
+                className="dropdown-item"
+                onClick={() => handleDue(row.id)}
+              >
+                <i className="bi bi-credit-card-fill mx-2"></i> Due Payments
+              </button>
+            </li>
+            <li>
               <span className="dropdown-item">
                 <i className="bi bi-pencil-fill mx-2"></i> Update
               </span>
             </li>
             <li>
-              <span className="dropdown-item">
-                <i className="bi bi-download mx-2"></i> Download PDF
-              </span>
-            </li>
-            <li>
-              <span className="dropdown-item">
+              <button className="dropdown-item" onClick={() => handleDelete(row.id)}>
                 <i className="bi bi-trash-fill mx-2"></i> Delete
-              </span>
+              </button>
             </li>
           </ul>
         </div>
@@ -198,9 +255,7 @@ const SalesList = () => {
         <div className="card-body">
           {loading ? (
             <div>Loading...</div>
-          ) : error ? (
-            <div className="text-danger">{error}</div>
-          ) : (
+          )  : (
             <>
               <div className="d-flex justify-content-between mb-3">
                 <input
@@ -222,6 +277,7 @@ const SalesList = () => {
                   </button>
                 </div>
               </div>
+              
               <DataTable className="dataTable-container"
                 columns={columns}
                 data={filteredSales}
@@ -241,6 +297,12 @@ const SalesList = () => {
           )}
         </div>
       </div>
+      {showDueModal && (
+        <DuePayements
+          onClose={handleCloseDueModal}
+          id={id} // Pass the row details if needed
+        />
+      )}
     </div>
   );
 };

@@ -503,7 +503,7 @@ useEffect(() => {
         </table>
         <div className="mb-3"><h4>Total: Rs. {invoice.total}</h4></div>
         <div className="mb-3"><h4><strong>Paid: Rs. </strong> {invoice.paid}</h4></div>
-        <p className="text-muted">Owner's Signature: <u>{user.username}</u></p>
+        <p className="text-muted">Proprietor's Signature: <u>{user.username}</u></p>
         <hr />
       </div>
 

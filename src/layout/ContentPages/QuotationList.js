@@ -11,6 +11,10 @@ import "./TableContents/DropDown.css"
 import { useSection } from "../../hooks/context/SectionProvider";
 // import "./PurchaseList.css"; // Import your CSS for styling
 
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import "sweetalert2/dist/sweetalert2.min.css";
+
 const QuotationList = () => {
   const navigate = useNavigate()
   const [searchText, setSearchText] = useState("");
@@ -26,8 +30,8 @@ const QuotationList = () => {
       setLoading(true);
       setError("");
       const response = await API.get(`/quotation-list/${user.location}/${selectedSection}`);
-      setQuotations(response.data.quotation || []);
-      setFilteredQuotations(response.data.quotation || []);
+      setQuotations(response.data.quotation);
+      setFilteredQuotations(response.data.quotation);
     } catch (err) {
       setError(err.response?.data?.message || "An error occurred while fetching quotations.");
     } finally {
@@ -60,6 +64,41 @@ const QuotationList = () => {
     const url = `/${user.location}/pdf-generator?id=${quotationId}&type=quotation`;
     window.open(url, "_blank")
   }
+
+  const handleDelete = async (id) => {
+    try {
+      // Show the confirmation dialog
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You want to Delete the Quotation.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete",
+      });
+  
+      if (result.isConfirmed) {
+        // Call the delete API endpoint
+        const response = await API.delete(`/delete-quotation/${id}`);
+        console.log(response.data.message); // Optionally log the success message
+  
+        // Optionally, you can show a success notification
+        Swal.fire("Deleted!", "The invoice has been deleted.", "success");
+      }
+      // // Remove the deleted item from the salesData and filteredSales arrays
+      const updatedQuotations = quotations.filter(item => item.id !== id);
+      setQuotations(updatedQuotations); // Update the salesData state
+  
+      // Optionally, if you want to keep the search filter active, update filteredSales
+      const updatedFilteredQuotations = filteredQuotations.filter(item => item.id !== id);
+      setFilteredQuotations(updatedFilteredQuotations); // Update the filteredSales state
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      // Optionally, show an error notification to the user
+      Swal.fire("Error!", "There was a problem deleting the invoice.", "error");
+    }
+  };
 
   // Export to PDF
     const handleExportToPDF = () => {
@@ -130,14 +169,9 @@ const QuotationList = () => {
                   </span>
                 </li>
                 <li>
-                  <span className="dropdown-item">
-                    <i className="bi bi-download mx-2"></i> Download PDF
-                  </span>
-                </li>
-                <li>
-                  <span className="dropdown-item">
+                  <button className="dropdown-item" onClick={() => handleDelete(row.id)}>
                     <i className="bi bi-trash-fill mx-2"></i> Delete
-                  </span>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -162,9 +196,7 @@ const QuotationList = () => {
         <div className="card-body">
           {loading ? (
             <div>Loading...</div>
-          ) : error ? (
-            <div className="text-danger">{error}</div>
-          ) :(
+          )  :(
             <>
             <div className="d-flex justify-content-between mb-3">
                 <input

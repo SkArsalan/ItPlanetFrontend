@@ -180,7 +180,7 @@ const PdfGenerator = ({ productIds = [], externalData = {}, heading }) => {
         {type === "invoice" ? <div className="mb-3"><h4><strong>Paid: Rs. </strong> {details.paid}</h4></div> : <span></span>}
         <p className="text-muted">
           {/* Owner's Signature: <u>{user.username}</u> */}
-          Owner's Signature: <u>{details.created_by}</u>
+          Proprietor's Signature: <u>{details.created_by}</u>
         </p>
         <hr />
       </div>

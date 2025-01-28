@@ -11,6 +11,10 @@ import { useAuth } from "../../hooks/context/AuthContext";
 import "./TableContents/DropDown.css"
 import { useSection } from "../../hooks/context/SectionProvider";
 
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import "sweetalert2/dist/sweetalert2.min.css";
+
 const ProductList = () => {
   const navigate = useNavigate();
   const {selectedSection} = useSection();
@@ -44,14 +48,35 @@ const ProductList = () => {
     }
   }, [isAuthenticated, fetchProducts, navigate]);
 
+
   const handleDelete = async (productId) => {
     try {
-      await API.delete(`/delete/${productId}`);
+      // Show the confirmation dialog
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You want to Delete the Product.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete",
+      });
+  
+      if (result.isConfirmed) {
+        // Call the delete API endpoint
+        const response = await API.delete(`/delete/${productId}`);
+        console.log(response.data.message); // Optionally log the success message
+  
+        // Optionally, you can show a success notification
+        Swal.fire("Deleted!", "The invoice has been deleted.", "success");
+      }
       const updatedProducts = products.filter((product) => product.id !== productId);
       setProducts(updatedProducts);
       setFilteredProducts(updatedProducts);
     } catch (error) {
-      console.error("Error deleting product", error);
+      console.error("Error deleting invoice:", error);
+      // Optionally, show an error notification to the user
+      Swal.fire("Error!", "There was a problem deleting the invoice.", "error");
     }
   };
 
