@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 import { useState } from "react";
 import API from "../../../api/axios";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import "sweetalert2/dist/sweetalert2.min.css";
+
 
 function DuePayements({ onClose, id }) {
 
@@ -43,18 +47,59 @@ function DuePayements({ onClose, id }) {
     
   }
 
-  async function handleSubmit() {
-      
+  async function handleSubmit(e) {
+    const MySwal = withReactContent(Swal);
+    e.preventDefault();
+  
     try {
+      // Show the loading modal first
+      MySwal.fire({
+        title: "Processing...",
+        text: "Please wait while we process your request.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        willOpen: () => {
+          Swal.showLoading();
+        },
+      });
+  
+      // Perform the API call
       const response = await API.put(`/update-due-payments/${id}`, {
         paid: Number(currentPay),
         due: remainingDue,
       });
+  
+      // Show success message after the API call succeeds
+      MySwal.fire({
+        title: "Success!",
+        text: response.data.message || "Payments updated successfully",
+        icon: "success",
+        confirmButtonText: "OK",
+      }).then(() => {
+        // Reload the page after the user clicks "OK"
+        window.location.reload();
+      });
+  
       console.log(response.data.message || "Payments updated successfully");
+      
     } catch (error) {
+      // Show error message if something goes wrong
+      MySwal.fire({
+        title: "Error!",
+        text: "There was an issue updating the payments.",
+        icon: "error",
+        confirmButtonText: "OK",
+      }).then(() => {
+        // Reload the page after the user clicks "OK"
+        window.location.reload();
+      });
+      
       console.error("Error updating payments:", error);
     }
   }
+  
+  
   
   
 
