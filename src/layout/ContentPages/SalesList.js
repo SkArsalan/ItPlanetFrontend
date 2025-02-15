@@ -9,6 +9,7 @@ import { useAuth } from "../../hooks/context/AuthContext";
 import API from "../../api/axios";
 import "./TableContents/DropDown.css"
 import DuePayements from "./PopupContents/DuePayements";
+import UpdateInvoice from "./PopupContents/UpdateInvoice";
 
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -23,6 +24,7 @@ const SalesList = () => {
   const [error, setError] = useState(""); // Error message state
   const { user, isAuthenticated } = useAuth();
   const [showDueModal, setShowDueModal] = useState(false);
+  const [updateInvoiceModal, setUpdateInvoiceModal] = useState(false);
   const [id, setId] = useState()
 
   const fetchSalesData = async () => {
@@ -73,6 +75,16 @@ const SalesList = () => {
     setShowDueModal(false);
     setId(null); // Clear the selected row after closing the modal
   };
+
+  const handleOpen_UpdateInvoice = (id) => {
+    setId(id);
+    setUpdateInvoiceModal(true);
+  }
+
+  const handleClose_UpdateInvoice = () =>{
+    setUpdateInvoiceModal(false);
+    setId(null);
+  }
 
   const handleDelete = async (id) => {
     try {
@@ -224,9 +236,12 @@ const SalesList = () => {
               </button>
             </li>
             <li>
-              <span className="dropdown-item">
+              <button 
+              className="dropdown-item"
+              onClick={() => handleOpen_UpdateInvoice(row.id)}
+              >
                 <i className="bi bi-pencil-fill mx-2"></i> Update
-              </span>
+              </button>
             </li>
             <li>
               <button className="dropdown-item" onClick={() => handleDelete(row.id)}>
@@ -303,6 +318,14 @@ const SalesList = () => {
           id={id} // Pass the row details if needed
         />
       )}
+
+      {
+        updateInvoiceModal && (
+          <UpdateInvoice
+          onClose={handleClose_UpdateInvoice}
+          id={id}
+          />
+        )}
     </div>
   );
 };

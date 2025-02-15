@@ -17,10 +17,14 @@ import PurchaseList from './layout/ContentPages/PurchaseList';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './hooks/context/AuthContext';
 import PdfGenerator from './pdf/PdfGenerator';
+import Home from './pages/Home';
 
 function App() {
   
   const router = createBrowserRouter([
+    {
+      path: "/", element: <Home/>
+    },
     {
       path: "/login", element: <Login/>
     },

@@ -63,7 +63,7 @@ function Navbar({ toggleSidebar }) {
                   }}
                 >
                   <Link
-                    to="#"
+                    to={`/${user.location}/${selectedSection}/product-list`}
                     className="dropdown-item"
                     onClick={() => setSelectedSection(page.categories)}
                   >

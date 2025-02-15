@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL: 'http://15.207.103.2:5001', // Ensure this matches your Flask API base URL
+    baseURL: 'https://admin.itplanet4u.com', // Ensure this matches your Flask API base URL
     withCredentials: true, // Enable cookies for session management
     headers: {
         "Content-Type": "application/json", // Specify JSON format for requests
