@@ -2,7 +2,7 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
 import './Navbar.css';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useSection } from '../hooks/context/SectionProvider';
 import { useAuth } from '../hooks/context/AuthContext';
 import API from '../api/axios';
@@ -21,6 +21,7 @@ function Navbar({ toggleSidebar }) {
     queryFn: fetchPages,
   });
 
+  
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
@@ -28,6 +29,13 @@ function Navbar({ toggleSidebar }) {
     await logout();
     navigate('/login'); // Redirect after logout
   };
+
+  const handleClick = (page) => {
+    setSelectedSection(page.categories);
+    // Use page.categories directly in navigate
+    navigate(`/${user.location}/${page.categories}/product-list`);
+  };
+  
 
   return (
     <nav className="navbar navbar-expand-lg">
@@ -62,13 +70,12 @@ function Navbar({ toggleSidebar }) {
                     fontWeight: selectedSection === page.categories ? 'bold' : 'normal',
                   }}
                 >
-                  <Link
-                    to={`/${user.location}/${selectedSection}/product-list`}
+                  <button
                     className="dropdown-item"
-                    onClick={() => setSelectedSection(page.categories)}
+                    onClick={() => handleClick(page)}
                   >
                     {page.categories} Section
-                  </Link>
+                  </button>
                 </li>
               ))}
             </ul>
