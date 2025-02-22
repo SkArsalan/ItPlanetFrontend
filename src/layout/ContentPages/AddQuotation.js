@@ -15,7 +15,7 @@ const AddQuotation = () => {
   const navigate = useNavigate();
   const {selectedSection} = useSection()
 
-  const quotationToEdit = location.state?.invoice || null; 
+  
   const initialFormData = {
     CustomerName: "",
     mobileNumber: "",
@@ -188,10 +188,9 @@ const AddQuotation = () => {
       },
     });
 
-    const endpoint = quotationToEdit ? `/update-quotation/${quotationToEdit.id}` // Update endpoint if editing
-    : "/add-quotation";
+    const endpoint = "/add-citation";
 
-    const method = quotationToEdit ? "put" : "post"
+    const method = "post"
 
     try{
       const response = await API[method](endpoint, formData);
@@ -202,7 +201,7 @@ const AddQuotation = () => {
         title: "Success",
         text: response.data.message || "Product saved successfully",
       });
-      quotationToEdit ? navigate("quotation-list") : setFormData(initialFormData);
+     setFormData(initialFormData);
     } catch (error){
       console.error("Error adding quotation: ", error);
       const errorMessage = error.response?.data?.message || "An error occurred while adding the quotation"
