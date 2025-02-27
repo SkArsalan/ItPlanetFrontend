@@ -6,17 +6,24 @@ import withReactContent from "sweetalert2-react-content";
 import "sweetalert2/dist/sweetalert2.min.css";
 
 
-function DuePayements({ onClose, id }) {
-
+function DuePayements({ onClose,id, type }) {
+   
   const [currentPay, setCurrentPay] = useState(0)
   const [dues, setDues] = useState(0);
   const [remainingDue, setRemainingDue] = useState(dues)
 
   const fetchDueDetails = async() => {
     try{
-      const response = await API.get(`/due-payments/${id}`);
-      console.log(response)
-      setDues(response.data)
+      if(type === "purchase"){
+        const response = await API.get(`/due-purchase-payments/${id}`);
+        console.log(response)
+        setDues(response.data)
+      }else{
+        const response = await API.get(`/due-payments/${id}`);
+        console.log(response)
+        setDues(response.data)
+      }
+      
     }
     catch (error){
       console.log(error.response?.data?.message || error.message);
@@ -65,11 +72,30 @@ function DuePayements({ onClose, id }) {
       });
   
       // Perform the API call
+
+      if(type === "purchase"){
+        const response = await API.put(`/update-due-purchase-payments/${id}`, {
+          paid: Number(currentPay),
+          due: remainingDue,
+        });
+
+        // Show success message after the API call succeeds
+      MySwal.fire({
+        title: "Success!",
+        text: response.data.message || "Payments updated successfully",
+        icon: "success",
+        confirmButtonText: "OK",
+      }).then(() => {
+        // Reload the page after the user clicks "OK"
+        window.location.reload();
+      });
+  
+      console.log(response.data.message || "Payments updated successfully");
+      }else{
       const response = await API.put(`/update-due-payments/${id}`, {
         paid: Number(currentPay),
         due: remainingDue,
       });
-  
       // Show success message after the API call succeeds
       MySwal.fire({
         title: "Success!",
@@ -82,6 +108,9 @@ function DuePayements({ onClose, id }) {
       });
   
       console.log(response.data.message || "Payments updated successfully");
+    }
+  
+      
       
     } catch (error) {
       // Show error message if something goes wrong
@@ -113,7 +142,7 @@ function DuePayements({ onClose, id }) {
     <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div className="modal-content">
         <div className="modal-header">
-          <h5 className="modal-title">Due Payments</h5>
+          <h5 className="modal-title">{type === "purchase"? "Purchase" : "Invoice"} Due Payments</h5>
           <button
             type="button"
             className="btn-close"

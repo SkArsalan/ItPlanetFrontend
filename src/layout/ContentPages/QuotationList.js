@@ -164,9 +164,12 @@ const QuotationList = () => {
                   </button>
                 </li>
                 <li>
-                  <span className="dropdown-item">
-                    <i className="bi bi-pencil-fill mx-2"></i> Update
-                  </span>
+                <button 
+              className="dropdown-item"
+              onClick={() => navigate(`/${user.location}/${selectedSection}/edit-quotation?id=${row.id}`)}
+              >
+                <i className="bi bi-pencil-fill mx-2"></i> Update
+              </button>
                 </li>
                 <li>
                   <button className="dropdown-item" onClick={() => handleDelete(row.id)}>

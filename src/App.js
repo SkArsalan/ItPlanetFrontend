@@ -18,6 +18,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './hooks/context/AuthContext';
 import PdfGenerator from './pdf/PdfGenerator';
 import Home from './pages/Home';
+import EditPage from './layout/ContentPages/EditPage';
+import InvoiceEditPage from './layout/ContentPages/InvoiceEditPage';
+import QuotationEditPage from './layout/ContentPages/QuotationEditPage';
 
 function App() {
   
@@ -42,6 +45,9 @@ function App() {
         {path: ":category/purchase-list", element:<PurchaseList/>},
         {path: ":category/add-quotation", element:<AddQuotation/>},
         {path: ":category/quotation-list", element:<QuotationList/>},
+        {path: ":category/edit-info", element: <EditPage/>},
+        {path: ":category/edit-invoice", element: <InvoiceEditPage/>},
+        {path: ":category/edit-quotation", element: <QuotationEditPage/>},
         {path: "sales-list", element: <SalesList/>},
         {path: "pdf-generator", element: <PdfGenerator/>},
         {path: "*", element: <PageNotFound/>}

@@ -14,9 +14,11 @@ import UpdateInvoice from "./PopupContents/UpdateInvoice";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import "sweetalert2/dist/sweetalert2.min.css";
+import { useSection } from "../../hooks/context/SectionProvider";
 
 const SalesList = () => {
   const navigate = useNavigate();
+  const {selectedSection} = useSection();
   const [searchText, setSearchText] = useState("");
   const [salesData, setSalesData] = useState([]);
   const [filteredSales, setFilteredSales] = useState([]);
@@ -238,7 +240,7 @@ const SalesList = () => {
             <li>
               <button 
               className="dropdown-item"
-              onClick={() => handleOpen_UpdateInvoice(row.id)}
+              onClick={() => navigate(`/${user.location}/${selectedSection}/edit-invoice?id=${row.id}`)}
               >
                 <i className="bi bi-pencil-fill mx-2"></i> Update
               </button>
@@ -316,6 +318,7 @@ const SalesList = () => {
         <DuePayements
           onClose={handleCloseDueModal}
           id={id} // Pass the row details if needed
+          type = "invoice"
         />
       )}
 
