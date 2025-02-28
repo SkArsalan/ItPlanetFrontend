@@ -7,7 +7,6 @@ const API = axios.create({
         "Content-Type": "application/json", // Specify JSON format for requests
     },
 });
-
 // Add a request interceptor to modify headers if needed
 API.interceptors.request.use(
     (config) => {
